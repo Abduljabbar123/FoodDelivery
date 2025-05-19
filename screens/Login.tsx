@@ -46,6 +46,7 @@ const Login = () => {
   const [error, setError] = useState(null);
   const [isChecked, setChecked] = useState(false);
   const {colors, dark} = useTheme();
+  const [loader, setLoader] = useState(false);
 
   const inputChangedHandler = useCallback(
     (inputId: string, inputValue: string) => {
@@ -78,6 +79,12 @@ const Login = () => {
   // Implementing google authentication
   const googleAuthHandler = () => {
     console.log('Google Authentication');
+  };
+
+  const login = () => {
+    try {
+      setLoader(true);
+    } catch (error) {}
   };
 
   return (
