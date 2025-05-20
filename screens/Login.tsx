@@ -71,6 +71,16 @@ const Login = () => {
     console.log('Apple Authentication');
   };
 
+  // Implementing facebook authentication
+  const facebookAuthHandler = () => {
+    console.log('Facebook Authentication');
+  };
+
+  // Implementing google authentication
+  const googleAuthHandler = () => {
+    console.log('Google Authentication');
+  };
+
   const login = () => {
     try {
       setLoader(true);
