@@ -24,6 +24,8 @@ import {useNavigation} from '@react-navigation/native';
 import {Overlay} from 'react-native-maps';
 import {OverlayLoader} from '../components/OverlayLoader';
 import Loader from '../components/Loader';
+import {SIGN_UP} from '../Redux/Reducers/Auth/actions';
+import {showSnackbar} from '../components/Snackbar';
 
 const isTestMode = true;
 
@@ -31,16 +33,18 @@ const initialState = {
   inputValues: {
     email: isTestMode ? 'example@gmail.com' : '',
     password: isTestMode ? '**********' : '',
+    name: isTestMode ? 'John Doe' : '',
   },
   inputValidities: {
     email: false,
     password: false,
+    name: false,
   },
   formIsValid: false,
 };
 
 type Nav = {
-  navigate: (value: string) => void;
+  navigate: (value: string, params?: Record<string, unknown>) => void;
 };
 
 const Signup = () => {
@@ -86,123 +90,56 @@ const Signup = () => {
   };
 
   const SignUpUser = () => {
-    // navigate('fillyourprofile')
-
+    if (!formState?.inputValues?.email) {
+      showSnackbar({
+        type: 'error',
+        body: 'please enter the email',
+        header: 'Validation failed',
+      });
+      return;
+    }
+    if (!formState?.inputValues?.password) {
+      showSnackbar({
+        type: 'error',
+        body: 'please enter the password',
+        header: 'Validation failed',
+      });
+      return;
+    }
+    if (!formState?.inputValues?.name) {
+      showSnackbar({
+        type: 'error',
+        body: 'please enter the name',
+        header: 'Validation failed',
+      });
+      return;
+    }
     setLoading(true);
-
-    // setTimeout(() => {
-    //   setLoading(false);
-    // }, 500);
-
-    const params = {
-      name: '',
-      email: formState?.inputValues?.email,
-      password: formState?.inputValues?.password,
-      confirmPassword: formState?.inputValues?.password,
-      phone_no: '',
-      address: '',
-      userType: '',
-    };
-    // if (!data.fname) {
-    //   setLoading(false);
-    //   showSnackbar({
-    //     type: 'error',
-    //     header: 'Validation failed',
-    //     body: 'First Name is required.',
-    //   });
-    //   return;
-    // } else if (!data.lname) {
-    //   setLoading(false);
-    //   showSnackbar({
-    //     type: 'error',
-    //     header: 'Validation failed',
-    //     body: 'Last Name is required.',
-    //   });
-    //   return;
-    // }
-    // userSchema
-    //   .validate(params)
-    //   .then(() => {
-    //     // Front and back image validation
-    //     if (userType === 'renter' && (!frontImage || !backImage)) {
-    //       setLoading(false);
-    //       showSnackbar({
-    //         type: 'error',
-    //         header: 'Validation failed',
-    //         body: 'Please add both front and back license images.',
-    //       });
-    //       return;
-    //     }
-
-    //     // Checkbox validation
-    //     if (!acceptTerms) {
-    //       setLoading(false);
-    //       showSnackbar({
-    //         type: 'error',
-    //         header: 'Validation failed',
-    //         body: 'Please accept the Terms and Conditions.',
-    //       });
-    //       return;
-    //     }
-    //     //
-    //     const formData = new FormData();
-    //     // for (const property in params) {
-    //     //   formData.append(property, params[property as keyof typeof params]);
-    //     // }
-    //     formData.append('name', `${data?.fname + ' ' + data?.lname}`),
-    //       formData.append('email', data?.email.toLowerCase());
-    //     formData.append('password', data?.password);
-    //     formData.append('confirmPassword', data?.repeat_password);
-    //     formData.append('phone_no', data?.phone_no);
-    //     if (data?.address[0]?.location?.area !== '') {
-    //       data?.address?.forEach((addressObj, index) => {
-    //         formData.append(
-    //           `address[${index}][location][area]`,
-    //           addressObj.location.area,
-    //         );
-    //         formData.append(
-    //           `address[${index}][location][lat]`,
-    //           addressObj.location.lat,
-    //         );
-    //         formData.append(
-    //           `address[${index}][location][lng]`,
-    //           addressObj.location.lng,
-    //         );
-    //       });
-
-    //       // formData.append('address[0]', JSON.stringify(data?.address[0]));
-    //     }
-    //     formData.append('role', userType);
-    //     if (userType === 'renter' && frontImage?.name) {
-    //       formData.append('license_front', frontImage);
-    //     }
-    //     if (userType === 'renter' && backImage?.name) {
-    //       formData.append('license_back', backImage);
-    //     }
-    //     SIGN_UP(formData, ({success}) => {
-    //       setLoading(false);
-    //       if (success) {
-    //         showSnackbar({
-    //           header: 'Success',
-    //           type: 'success',
-    //           body: 'You have successfully registered to Baddour.',
-    //         });
-    //         navigation.navigate('Verification', {
-    //           email: data?.email.toLowerCase(),
-    //         });
-    //       }
-    //     });
-    //   })
-    //   .catch(e => {
-    //     // crashlytics().log('SIGNUP SCREEN.');
-    //     // crashlytics().recordError(e);
-    //     setLoading(false);
-    //     showSnackbar({
-    //       type: 'error',
-    //       header: 'Validation failed.',
-    //       body: e.message,
-    //     });
-    //   });
+    try {
+      SIGN_UP(formState?.inputValues, (res: any) => {
+        if (res.success) {
+          setLoading(false);
+          // go for verification email
+          console.log('email =======>', formState?.inputValues?.email);
+          console.log('code =======>', res?.user?.code);
+          navigate('otpverification', {
+            email: formState?.inputValues?.email,
+            code: res?.user?.code,
+            screen: 'signup',
+          });
+          showSnackbar({
+            type: 'success',
+            body: res?.message,
+            header: 'User Signup',
+          });
+        } else {
+          console.log('error =======>', res?.message);
+        }
+      });
+    } catch (error) {
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -226,6 +163,16 @@ const Signup = () => {
             ]}>
             Create Your Account
           </Text>
+          <Input
+            id="name"
+            onInputChanged={inputChangedHandler}
+            errorText={formState.inputValidities['name']}
+            placeholder="Name"
+            placeholderTextColor={dark ? COLORS.grayTie : COLORS.black}
+            icon={icons.user}
+            keyboardType="name-phone-pad"
+            value={formState.inputValues.name}
+          />
           <Input
             id="email"
             onInputChanged={inputChangedHandler}
@@ -273,7 +220,7 @@ const Signup = () => {
             </View>
           </View>
           {loading ? (
-            <Loader />
+            <Loader text="Signing Up..." color={COLORS.primary} size={50} />
           ) : (
             <Button
               title="Sign Up"

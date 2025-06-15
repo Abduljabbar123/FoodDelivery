@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ImageSourcePropType } from 'react-native';
-import { COLORS, SIZES, icons } from '../constants';
-import { useTheme } from '../theme/ThemeProvider';
-import FontAwesome from "react-native-vector-icons/FontAwesome";
+import React, {useState} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ImageSourcePropType,
+} from 'react-native';
+import {COLORS, SIZES, icons} from '../constants';
+import {useTheme} from '../theme/ThemeProvider';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import {ENV} from '../config/env';
 
 interface HorizontalFoodCardProps {
   name: string;
@@ -25,17 +33,20 @@ const HorizontalFoodCard: React.FC<HorizontalFoodCardProps> = ({
   rating,
   numReviews,
   isPromo = false,
-  onPress
+  onPress,
 }) => {
   const [isFavourite, setIsFavourite] = useState(false);
-  const { dark } = useTheme();
+  const {dark} = useTheme();
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[styles.container, { backgroundColor: dark ? COLORS.dark2 : COLORS.white }]}>
+      style={[
+        styles.container,
+        {backgroundColor: dark ? COLORS.dark2 : COLORS.white},
+      ]}>
       <Image
-        source={image}
+        source={{uri: ENV.resourceURL + image}}
         resizeMode="cover"
         style={styles.image}
       />
@@ -46,30 +57,43 @@ const HorizontalFoodCard: React.FC<HorizontalFoodCardProps> = ({
       )}
       <View style={styles.columnContainer}>
         <View style={styles.topViewContainer}>
-          <Text style={[styles.name, { color: dark ? COLORS.secondaryWhite : COLORS.greyscale900 }]}>
+          <Text
+            style={[
+              styles.name,
+              {color: dark ? COLORS.secondaryWhite : COLORS.greyscale900},
+            ]}>
             {name}
           </Text>
         </View>
         <View style={styles.viewContainer}>
-          <Text style={[styles.location, { color: dark ? COLORS.greyscale300 : COLORS.grayscale700 }]}>
-            {distance} |{' '}
+          <Text
+            style={[
+              styles.location,
+              {color: dark ? COLORS.greyscale300 : COLORS.grayscale700},
+            ]}>
+            {distance ? distance : '1 km'} |{' '}
           </Text>
           <FontAwesome name="star" size={14} color="rgb(250, 159, 28)" />
-          <Text style={[styles.location, { color: dark ? COLORS.greyscale300 : COLORS.grayscale700 }]}>
+          <Text
+            style={[
+              styles.location,
+              {color: dark ? COLORS.greyscale300 : COLORS.grayscale700},
+            ]}>
             {' '}
-            {rating} ({numReviews})
+            {rating ? rating.toFixed(1) : '4.9'} (
+            {numReviews ? numReviews : '1k'})
           </Text>
         </View>
         <View style={styles.bottomViewContainer}>
           <View style={styles.priceContainer}>
-            <Text style={styles.price}>{price}</Text>
-            <Text style={styles.location}> |{' '}</Text>
+            <Text style={styles.price}>{price ? price : '$ 20.000'}</Text>
+            <Text style={styles.location}> | </Text>
             <Image
               source={icons.moto}
               resizeMode="contain"
               style={styles.motoIcon}
             />
-            <Text style={styles.location}>{fee}</Text>
+            <Text style={styles.location}>{fee ? fee : '$ 120'}</Text>
           </View>
           <TouchableOpacity onPress={() => setIsFavourite(!isFavourite)}>
             <Image
@@ -107,14 +131,14 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 17,
-    fontFamily: "Urbanist Bold",
+    fontFamily: 'Urbanist Bold',
     color: COLORS.greyscale900,
     marginVertical: 4,
     marginRight: 40,
   },
   location: {
     fontSize: 14,
-    fontFamily: "Urbanist Regular",
+    fontFamily: 'Urbanist Regular',
     color: COLORS.grayscale700,
     marginVertical: 4,
   },
@@ -143,7 +167,7 @@ const styles = StyleSheet.create({
   },
   rating: {
     fontSize: 10,
-    fontFamily: "Urbanist SemiBold",
+    fontFamily: 'Urbanist SemiBold',
     color: COLORS.white,
     marginLeft: 4,
   },
@@ -166,7 +190,7 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 16,
-    fontFamily: "Urbanist SemiBold",
+    fontFamily: 'Urbanist SemiBold',
     color: COLORS.primary,
     marginRight: 8,
   },

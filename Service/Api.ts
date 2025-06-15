@@ -1,10 +1,11 @@
 import axios from 'axios';
-import {showSnackbar} from '../Components/Snackbar';
+import {showSnackbar} from '../components/Snackbar';
 import {ENV} from '../config/env';
 import {getRedux} from '../Redux/function';
 import {LOGOUT} from '../Redux/Reducers/Auth/actions';
 import NetInfo, {NetInfoState} from '@react-native-community/netinfo';
 // import {navigationRef} from '../../../Navigation/navigationRef';
+import {request} from 'react-native-permissions';
 
 interface IApi {
   method: string;
@@ -30,6 +31,7 @@ class Api {
     });
   }
   static async request({method, url, data = {}}: IApi) {
+    console.log('ENV.base_url + url', ENV.base_url + url);
     await Api.checkInternetConnection();
     if (!Api.isConnected) {
       showSnackbar({
@@ -40,6 +42,7 @@ class Api {
     } else {
       const {state} = getRedux();
       const {token} = state?.auth;
+      console.log('token', token);
       return axios({
         method,
         url: ENV.base_url + url,
@@ -57,6 +60,11 @@ class Api {
             'heeeloo ERROR API REQUEST->',
             err,
           );
+          console.log('err.request.status', err.request.status);
+
+          if (err.request.status === 403) {
+            LOGOUT();
+          }
 
           if (err.request.status === 418) {
             LOGOUT();
@@ -70,8 +78,14 @@ class Api {
               email: data?.email,
               loginPage: true,
             });
+          } else {
+            showSnackbar({
+              type: 'error',
+              header: 'Error',
+              body: err.response?.data?.message,
+            });
           }
-          throw err;
+          // throw err;
         });
     }
   }

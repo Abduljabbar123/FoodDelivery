@@ -1,25 +1,43 @@
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Modal, TouchableWithoutFeedback, FlatList, TextInput, Image } from 'react-native';
-import React, { useCallback, useEffect, useReducer, useState } from 'react';
-import { COLORS, SIZES, FONTS, icons, images } from '../constants';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+  Modal,
+  TouchableWithoutFeedback,
+  FlatList,
+  TextInput,
+  Image,
+} from 'react-native';
+import React, {useCallback, useEffect, useReducer, useState} from 'react';
+import {COLORS, SIZES, FONTS, icons, images} from '../constants';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import Header from '../components/Header';
-import { reducer } from '../utils/reducers/formReducers';
-import { validateInput } from '../utils/actions/formActions';
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import Feather from "react-native-vector-icons/Feather";
-import { ImageLibraryOptions, ImagePickerResponse, launchImageLibrary } from 'react-native-image-picker';
+import {reducer} from '../utils/reducers/formReducers';
+import {validateInput} from '../utils/actions/formActions';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Feather from 'react-native-vector-icons/Feather';
+import {
+  ImageLibraryOptions,
+  ImagePickerResponse,
+  launchImageLibrary,
+} from 'react-native-image-picker';
 import Input from '../components/Input';
-import { getFormatedDate } from "react-native-modern-datepicker";
+import {getFormatedDate} from 'react-native-modern-datepicker';
 import DatePickerModal from '../components/DatePickerModal';
 import Button from '../components/Button';
 import RNPickerSelect from 'react-native-picker-select';
-import { useTheme } from '../theme/ThemeProvider';
-import { NavigationProp, useNavigation } from '@react-navigation/native';
+import {useTheme} from '../theme/ThemeProvider';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {useAppSelector} from '../Helper/Hooks/reduxHooks';
+import {UPDATE_USERPROFILE} from '../Redux/Reducers/Auth/actions';
 
 interface Item {
   flag: string;
   item: string;
-  code: string
+  code: string;
 }
 
 interface RenderItemProps {
@@ -32,8 +50,8 @@ const initialState = {
   inputValues: {
     fullName: isTestMode ? 'John Doe' : '',
     email: isTestMode ? 'example@gmail.com' : '',
-    nickname: isTestMode ? "" : "",
-    phoneNumber: ''
+    nickname: isTestMode ? '' : '',
+    phoneNumber: '',
   },
   inputValidities: {
     fullName: false,
@@ -42,7 +60,7 @@ const initialState = {
     phoneNumber: false,
   },
   formIsValid: false,
-}
+};
 
 // edit profile screen
 const EditProfile = () => {
@@ -55,12 +73,13 @@ const EditProfile = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [openStartDatePicker, setOpenStartDatePicker] = useState(false);
   const [selectedGender, setSelectedGender] = useState('');
-  const { dark } = useTheme();
+  const {dark} = useTheme();
+  const {user} = useAppSelector(state => state.auth);
 
   const genderOptions = [
-    { label: 'Male', value: 'male' },
-    { label: 'Female', value: 'female' },
-    { label: 'Other', value: 'other' },
+    {label: 'Male', value: 'male'},
+    {label: 'Female', value: 'female'},
+    {label: 'Other', value: 'other'},
   ];
 
   const handleGenderChange = (value: any) => {
@@ -70,27 +89,40 @@ const EditProfile = () => {
   const today = new Date();
   const startDate = getFormatedDate(
     new Date(today.setDate(today.getDate() + 1)),
-    "YYYY/MM/DD"
+    'YYYY/MM/DD',
   );
 
-  const [startedDate, setStartedDate] = useState("12/12/2023");
+  const [startedDate, setStartedDate] = useState('12/12/2023');
   const handleOnPressStartDate = () => {
     setOpenStartDatePicker(!openStartDatePicker);
   };
 
+  useEffect(() => {
+    // add proper data
+    inputChangedHandler('fullName', user?.name || '');
+    inputChangedHandler('email', user?.email || '');
+    inputChangedHandler('nickname', user?.nickname || '');
+    inputChangedHandler('phoneNumber', user?.number || '');
+
+    console.log('user?.email', user?.email);
+    // inputChangedHandler('phoneNumber', user?.phone_no || '');
+  }, [user]);
+
   const inputChangedHandler = useCallback(
     (inputId: string, inputValue: string) => {
-      const result = validateInput(inputId, inputValue)
+      const result = validateInput(inputId, inputValue);
       dispatchFormState({
         inputId,
         validationResult: result,
         inputValue,
-      })
-    }, [dispatchFormState]);
+      });
+    },
+    [dispatchFormState],
+  );
 
   useEffect(() => {
     if (error) {
-      Alert.alert('An error occured', error)
+      Alert.alert('An error occured', error);
     }
   }, [error]);
 
@@ -110,14 +142,14 @@ const EditProfile = () => {
         console.log('Image picker error: ', response.errorMessage);
       } else if (response.assets && response.assets.length > 0) {
         let imageUri = response.assets[0].uri;
-        setImage({ uri: imageUri });
+        setImage({uri: imageUri});
       }
     });
   };
 
   // fectch codes from rescountries api
   useEffect(() => {
-    fetch("https://restcountries.com/v2/all")
+    fetch('https://restcountries.com/v2/all')
       .then(response => response.json())
       .then(data => {
         let areaData = data.map((item: any) => {
@@ -125,101 +157,121 @@ const EditProfile = () => {
             code: item.alpha2Code,
             item: item.name,
             callingCode: `+${item.callingCodes[0]}`,
-            flag: `https://flagsapi.com/${item.alpha2Code}/flat/64.png`
-          }
+            flag: `https://flagsapi.com/${item.alpha2Code}/flat/64.png`,
+          };
         });
 
         setAreas(areaData);
         if (areaData.length > 0) {
-          let defaultData = areaData.filter((a: any) => a.code == "US");
+          let defaultData = areaData.filter((a: any) => a.code == 'US');
 
           if (defaultData.length > 0) {
-            setSelectedArea(defaultData[0])
+            setSelectedArea(defaultData[0]);
           }
         }
-      })
-  }, [])
+      });
+  }, []);
 
   // render countries codes modal
   function RenderAreasCodesModal() {
-
-    const renderItem = ({ item }: RenderItemProps) => {
+    const renderItem = ({item}: RenderItemProps) => {
       return (
         <TouchableOpacity
           style={{
             padding: 10,
-            flexDirection: "row"
+            flexDirection: 'row',
           }}
           onPress={() => {
-            setSelectedArea(item),
-              setModalVisible(false)
-          }}
-        >
+            setSelectedArea(item), setModalVisible(false);
+          }}>
           <Image
-            source={{ uri: item.flag }}
-            resizeMode='contain'
+            source={{uri: item.flag}}
+            resizeMode="contain"
             style={{
               height: 30,
               width: 30,
-              marginRight: 10
+              marginRight: 10,
             }}
           />
-          <Text style={{ fontSize: 16, color: "#fff" }}>{item.item}</Text>
+          <Text style={{fontSize: 16, color: '#fff'}}>{item.item}</Text>
         </TouchableOpacity>
-      )
-    }
+      );
+    };
+
     return (
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}>
-        <TouchableWithoutFeedback
-          onPress={() => setModalVisible(false)}>
+      <Modal animationType="slide" transparent={true} visible={modalVisible}>
+        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
           <View
-            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
             <View
               style={{
                 height: 400,
                 width: SIZES.width * 0.8,
                 backgroundColor: COLORS.primary,
-                borderRadius: 12
-              }}
-            >
+                borderRadius: 12,
+              }}>
               <FlatList
                 data={areas}
                 renderItem={renderItem}
                 horizontal={false}
-                keyExtractor={(item) => item.code}
+                keyExtractor={item => item.code}
                 style={{
                   padding: 20,
-                  marginBottom: 20
+                  marginBottom: 20,
                 }}
               />
             </View>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-    )
+    );
   }
 
+  const editProfile = () => {
+    const formData = new FormData();
+    console.log('formState', formState.inputValues.fullName);
+
+    formData.append('name', formState.inputValues.fullName || '');
+    formData.append('nickname', formState.inputValues.nickname || '');
+    formData.append('email', formState.inputValues.email || '');
+    formData.append('number', formState.inputValues.phoneNumber || '');
+    formData.append('photo', image?.uri || '');
+    formData.append('country_code', selectedArea?.callingCode || '');
+
+    UPDATE_USERPROFILE(user?._id, formData, res => {
+      if (res.success) {
+        navigation.goBack();
+      } else {
+      }
+    });
+  };
+
   return (
-    <SafeAreaView style={[styles.area, { backgroundColor: dark ? COLORS.dark1 : COLORS.white }]}>
-      <View style={[styles.container, { backgroundColor: dark ? COLORS.dark1 : COLORS.white }]}>
+    <SafeAreaView
+      style={[
+        styles.area,
+        {backgroundColor: dark ? COLORS.dark1 : COLORS.white},
+      ]}>
+      <View
+        style={[
+          styles.container,
+          {backgroundColor: dark ? COLORS.dark1 : COLORS.white},
+        ]}>
         <Header title="Personal Profile" />
         <ScrollView showsVerticalScrollIndicator={false}>
-          <View style={{ alignItems: "center", marginVertical: 12 }}>
+          <View style={{alignItems: 'center', marginVertical: 12}}>
             <View style={styles.avatarContainer}>
               <Image
                 source={image === null ? images.user1 : image}
                 resizeMode="cover"
-                style={styles.avatar} />
-              <TouchableOpacity
-                onPress={pickImage}
-                style={styles.pickImage}>
+                style={styles.avatar}
+              />
+              <TouchableOpacity onPress={pickImage} style={styles.pickImage}>
                 <MaterialCommunityIcons
                   name="pencil-outline"
                   size={24}
-                  color={COLORS.white} />
+                  color={COLORS.white}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -230,6 +282,7 @@ const EditProfile = () => {
               errorText={formState.inputValidities['fullName']}
               placeholder="Full Name"
               placeholderTextColor={dark ? COLORS.grayTie : COLORS.black}
+              value={formState.inputValues['fullName']}
             />
             <Input
               id="nickname"
@@ -243,45 +296,64 @@ const EditProfile = () => {
               onInputChanged={inputChangedHandler}
               errorText={formState.inputValidities['email']}
               placeholder="Email"
+              editable={false}
+              value={formState.inputValues['email']}
               placeholderTextColor={dark ? COLORS.grayTie : COLORS.black}
-              keyboardType="email-address" />
-            <View style={{
-              width: SIZES.width - 32
-            }}>
+              keyboardType="email-address"
+            />
+            <View
+              style={{
+                width: SIZES.width - 32,
+              }}>
               <TouchableOpacity
-                style={[styles.inputBtn, {
-                  backgroundColor: dark ? COLORS.dark2 : COLORS.greyscale500,
-                  borderColor: dark ? COLORS.dark2 : COLORS.greyscale500,
-                }]}
-                onPress={handleOnPressStartDate}
-              >
-                <Text style={{ ...FONTS.body4, color: COLORS.grayscale400 }}>{startedDate}</Text>
-                <Feather name="calendar" size={24} color={COLORS.grayscale400} />
+                style={[
+                  styles.inputBtn,
+                  {
+                    backgroundColor: dark ? COLORS.dark2 : COLORS.greyscale500,
+                    borderColor: dark ? COLORS.dark2 : COLORS.greyscale500,
+                  },
+                ]}
+                onPress={handleOnPressStartDate}>
+                <Text style={{...FONTS.body4, color: COLORS.grayscale400}}>
+                  {startedDate}
+                </Text>
+                <Feather
+                  name="calendar"
+                  size={24}
+                  color={COLORS.grayscale400}
+                />
               </TouchableOpacity>
             </View>
-            <View style={[styles.inputContainer, {
-              backgroundColor: dark ? COLORS.dark2 : COLORS.greyscale500,
-              borderColor: dark ? COLORS.dark2 : COLORS.greyscale500,
-            }]}>
+            <View
+              style={[
+                styles.inputContainer,
+                {
+                  backgroundColor: dark ? COLORS.dark2 : COLORS.greyscale500,
+                  borderColor: dark ? COLORS.dark2 : COLORS.greyscale500,
+                },
+              ]}>
               <TouchableOpacity
                 style={styles.selectFlagContainer}
                 onPress={() => setModalVisible(true)}>
-                <View style={{ justifyContent: "center" }}>
+                <View style={{justifyContent: 'center'}}>
                   <Image
                     source={icons.down}
-                    resizeMode='contain'
+                    resizeMode="contain"
                     style={styles.downIcon}
                   />
                 </View>
-                <View style={{ justifyContent: "center", marginLeft: 5 }}>
+                <View style={{justifyContent: 'center', marginLeft: 5}}>
                   <Image
-                    source={{ uri: selectedArea?.flag }}
+                    source={{uri: selectedArea?.flag}}
                     resizeMode="contain"
                     style={styles.flagIcon}
                   />
                 </View>
-                <View style={{ justifyContent: "center", marginLeft: 5 }}>
-                  <Text style={{ color: dark ? COLORS.white : "#111", fontSize: 12 }}>{selectedArea?.callingCode}</Text>
+                <View style={{justifyContent: 'center', marginLeft: 5}}>
+                  <Text
+                    style={{color: dark ? COLORS.white : '#111', fontSize: 12}}>
+                    {selectedArea?.callingCode}
+                  </Text>
                 </View>
               </TouchableOpacity>
               {/* Phone Number Text Input */}
@@ -291,13 +363,15 @@ const EditProfile = () => {
                 placeholderTextColor={dark ? COLORS.grayTie : COLORS.black}
                 selectionColor="#111"
                 keyboardType="numeric"
+                value={formState.inputValues.phoneNumber}
+                onChangeText={text => inputChangedHandler('phoneNumber', text)}
               />
             </View>
-            <View>
+            {/* <View>
               <RNPickerSelect
-                placeholder={{ label: 'Select', value: '' }}
+                placeholder={{label: 'Select', value: ''}}
                 items={genderOptions}
-                onValueChange={(value) => handleGenderChange(value)}
+                onValueChange={value => handleGenderChange(value)}
                 value={selectedGender}
                 style={{
                   inputIOS: {
@@ -324,14 +398,14 @@ const EditProfile = () => {
                   },
                 }}
               />
-            </View>
-            <Input
+            </View> */}
+            {/* <Input
               id="occupation"
               onInputChanged={inputChangedHandler}
               errorText={formState.inputValidities['occupation']}
               placeholder="Occupation"
               placeholderTextColor={dark ? COLORS.grayTie : COLORS.black}
-            />
+            /> */}
           </View>
         </ScrollView>
       </View>
@@ -340,7 +414,7 @@ const EditProfile = () => {
         startDate={startDate}
         selectedDate={startedDate}
         onClose={() => setOpenStartDatePicker(false)}
-        onChangeStartDate={(date) => setStartedDate(date)}
+        onChangeStartDate={date => setStartedDate(date)}
       />
       {RenderAreasCodesModal()}
       <View style={styles.bottomContainer}>
@@ -348,26 +422,28 @@ const EditProfile = () => {
           title="Update"
           filled
           style={styles.continueButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            editProfile();
+          }}
         />
       </View>
     </SafeAreaView>
-  )
+  );
 };
 
 const styles = StyleSheet.create({
   area: {
     flex: 1,
-    backgroundColor: COLORS.white
+    backgroundColor: COLORS.white,
   },
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: COLORS.white
+    backgroundColor: COLORS.white,
   },
   avatarContainer: {
     marginVertical: 12,
-    alignItems: "center",
+    alignItems: 'center',
     width: 130,
     height: 130,
     borderRadius: 65,
@@ -389,9 +465,9 @@ const styles = StyleSheet.create({
     right: 0,
   },
   inputContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     borderColor: COLORS.greyscale500,
-    borderWidth: .4,
+    borderWidth: 0.4,
     borderRadius: 6,
     height: 52,
     width: SIZES.width - 32,
@@ -402,24 +478,24 @@ const styles = StyleSheet.create({
   downIcon: {
     width: 10,
     height: 10,
-    tintColor: "#111"
+    tintColor: '#111',
   },
   selectFlagContainer: {
     width: 90,
     height: 50,
     marginHorizontal: 5,
-    flexDirection: "row",
+    flexDirection: 'row',
   },
   flagIcon: {
     width: 30,
-    height: 30
+    height: 30,
   },
   input: {
     flex: 1,
     marginVertical: 10,
     height: 40,
     fontSize: 14,
-    color: "#111"
+    color: '#111',
   },
   inputBtn: {
     borderWidth: 1,
@@ -428,44 +504,44 @@ const styles = StyleSheet.create({
     height: 50,
     paddingLeft: 8,
     fontSize: 18,
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
     marginTop: 4,
     backgroundColor: COLORS.greyscale500,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingRight: 8
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 8,
   },
   rowContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between"
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   bottomContainer: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 32,
     right: 16,
     left: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     width: SIZES.width - 32,
-    alignItems: "center"
+    alignItems: 'center',
   },
   continueButton: {
     width: SIZES.width - 32,
     borderRadius: 32,
     backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary
+    borderColor: COLORS.primary,
   },
   genderContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     borderColor: COLORS.greyscale500,
-    borderWidth: .4,
+    borderWidth: 0.4,
     borderRadius: 6,
     height: 58,
     width: SIZES.width - 32,
     alignItems: 'center',
     marginVertical: 16,
     backgroundColor: COLORS.greyscale500,
-  }
+  },
 });
 
 const pickerSelectStyles = StyleSheet.create({
@@ -478,7 +554,7 @@ const pickerSelectStyles = StyleSheet.create({
     width: SIZES.width - 32,
     alignItems: 'center',
     backgroundColor: COLORS.greyscale500,
-    borderRadius: 16
+    borderRadius: 16,
   },
   inputAndroid: {
     fontSize: 16,
@@ -489,8 +565,8 @@ const pickerSelectStyles = StyleSheet.create({
     width: SIZES.width - 32,
     alignItems: 'center',
     backgroundColor: COLORS.greyscale500,
-    borderRadius: 16
+    borderRadius: 16,
   },
 });
 
-export default EditProfile
+export default EditProfile;

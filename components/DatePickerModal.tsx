@@ -1,7 +1,7 @@
-import React, { useState, FC } from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, {useState, FC} from 'react';
+import {Modal, View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import DatePicker from 'react-native-modern-datepicker';
-import { COLORS } from '../constants';
+import {COLORS} from '../constants';
 
 const error = console.error;
 console.error = (...args) => {
@@ -43,10 +43,12 @@ const DatePickerModal: FC<DatePickerModalProps> = ({
         <View style={styles.modalView}>
           <DatePicker
             mode="calendar"
+            isGregorian={true}
+            locale="en"
             minimumDate={startDate}
             selected={selectedStartDate}
             onDateChange={handleDateChange}
-            onSelectedChange={(date) => setSelectedStartDate(date)}
+            onSelectedChange={date => setSelectedStartDate(date)}
             options={{
               backgroundColor: COLORS.primary,
               textHeaderColor: COLORS.white,
@@ -58,7 +60,7 @@ const DatePickerModal: FC<DatePickerModalProps> = ({
             }}
           />
           <TouchableOpacity onPress={handleOnPressStartDate}>
-            <Text style={{ color: 'white' }}>Close</Text>
+            <Text style={{color: 'white'}}>Close</Text>
           </TouchableOpacity>
         </View>
       </View>

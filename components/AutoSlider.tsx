@@ -1,22 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Image, StyleSheet, ScrollView, Dimensions, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
-import { COLORS, SIZES } from '../constants';
+import React, {useState, useEffect, useRef} from 'react';
+import {
+  View,
+  Image,
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+} from 'react-native';
+import {COLORS, SIZES} from '../constants';
+import {ENV} from '../config/env';
 
 interface AutoSliderProps {
-  images: { uri: string }[];
+  images: {uri: string}[];
 }
 
-const AutoSlider: React.FC<AutoSliderProps> = ({ images }) => {
+const AutoSlider: React.FC<AutoSliderProps> = ({images}) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+      setCurrentIndex(prevIndex => (prevIndex + 1) % images.length);
       if (scrollViewRef.current) {
         scrollViewRef.current.scrollTo({
           animated: true,
-          x: Dimensions.get('window').width * ((currentIndex + 1) % images.length),
+          x:
+            Dimensions.get('window').width *
+            ((currentIndex + 1) % images.length),
           y: 0,
         });
       }
@@ -27,7 +38,9 @@ const AutoSlider: React.FC<AutoSliderProps> = ({ images }) => {
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const currentIndex = Math.round(contentOffsetX / Dimensions.get('window').width);
+    const currentIndex = Math.round(
+      contentOffsetX / Dimensions.get('window').width,
+    );
     setCurrentIndex(currentIndex);
   };
 
@@ -50,14 +63,13 @@ const AutoSlider: React.FC<AutoSliderProps> = ({ images }) => {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onScroll={handleScroll}
-        scrollEventThrottle={16}
-      >
+        scrollEventThrottle={16}>
         {images.map((image, index) => (
           <Image
             key={index}
             style={styles.image}
-            source={image}
-            resizeMode='cover'
+            source={{uri: ENV.resourceURL + image}}
+            resizeMode="cover"
           />
         ))}
       </ScrollView>
@@ -67,7 +79,10 @@ const AutoSlider: React.FC<AutoSliderProps> = ({ images }) => {
             key={index}
             style={[
               styles.paginationDot,
-              { backgroundColor: index === currentIndex ? COLORS.primary : '#C4C4C4' },
+              {
+                backgroundColor:
+                  index === currentIndex ? COLORS.primary : '#C4C4C4',
+              },
             ]}
             onTouchStart={() => handlePaginationPress(index)}
           />

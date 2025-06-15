@@ -1,15 +1,41 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, FlatList, ListRenderItemInfo } from 'react-native';
-import React, { useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView } from 'react-native-virtualized-view';
-import { NavigationProp, useNavigation } from '@react-navigation/native';
-import { useTheme } from '../theme/ThemeProvider';
-import { banners, categories, discountProducts, recommendedProducts } from '../data';
-import { COLORS, icons, images, SIZES } from '../constants';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  TextInput,
+  FlatList,
+  ListRenderItemInfo,
+} from 'react-native';
+import React, {useEffect, useLayoutEffect, useState} from 'react';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {ScrollView} from 'react-native-virtualized-view';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {useTheme} from '../theme/ThemeProvider';
+import {
+  banners,
+  categories,
+  discountProducts,
+  recommendedProducts,
+} from '../data';
+import {COLORS, icons, images, SIZES} from '../constants';
 import SubHeaderItem from '../components/SubHeaderItem';
 import Category from '../components/Category';
 import VerticalFoodCard from '../components/VerticalFoodCard';
 import HorizontalFoodCard from '../components/HorizontalFoodCard';
+import {useAppSelector} from '../Helper/Hooks/reduxHooks';
+import {
+  GET_ALL_FOOD,
+  GET_DISCOUNTED_PRICE,
+  GET_FOOD_BY_CATOGERY_ID,
+} from '../Redux/Reducers/FoodListing/action';
+import {FModelListing} from '../Redux/Reducers/FoodListing/actions';
+import {GET_ALL_CATOGERIES} from '../Redux/Reducers/Catogery/action';
+import {FCatogerylListing} from '../Redux/Reducers/Catogery/actions';
+import Categories from './Categories';
+import Loader from '../components/Loader';
+import {products} from '../data/index';
 
 interface BannerItem {
   id: number;
@@ -22,18 +48,37 @@ interface BannerItem {
 interface Category {
   id: string;
   name: string;
+  description: string;
+  image: string;
+  createdAt: string;
+  updatedAt: string;
 }
+
+const loaderProps = {
+  size: 50,
+  mainStyles: {marginTop: 20},
+};
 
 const Home = () => {
   const navigation = useNavigation<NavigationProp<any>>();
-  const { dark, colors } = useTheme();
-
+  const {dark, colors} = useTheme();
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-
   const keyExtractor = (item: BannerItem) => item.id.toString();
+  const {user} = useAppSelector(state => state.auth);
+  const [search, setSearch] = useState('');
+  const [listCatogeries, setListCatogeries] = useState([]);
+  const [recomendedProductList, setRecomendedProductList] = useState([]);
+  const [loader, setLoader] = useState({
+    categories: false,
+    products: false,
+    discountedItems: false,
+  });
+  const [selectedCategories, setSelectedCategories] = useState(['']);
+  const [productByCatogeries, setProductByCatogeries] = useState([]);
+  const [discountedPriceItems, setDiscountedPriceItems] = useState([]);
 
   const handleEndReached = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % banners.length);
+    setCurrentIndex(prevIndex => (prevIndex + 1) % banners.length);
   };
 
   const renderDot = (index: number) => {
@@ -45,7 +90,7 @@ const Home = () => {
     );
   };
 
-  const renderBannerItem = ({ item }: ListRenderItemInfo<BannerItem>) => (
+  const renderBannerItem = ({item}: ListRenderItemInfo<BannerItem>) => (
     <View style={styles.bannerContainer}>
       <View style={styles.bannerTopContainer}>
         <View>
@@ -61,90 +106,166 @@ const Home = () => {
     </View>
   );
 
+  useLayoutEffect(() => {
+    getAllCategories();
+    getAllDiscountedFoods();
+  }, []);
+
+  const getAllCategories = () => {
+    try {
+      setLoader({...loader, categories: true, products: true});
+      GET_ALL_FOOD((res: FModelListing) => {
+        setRecomendedProductList(res?.foods);
+        console.log('res', JSON.stringify(res?.foods, null, 2));
+        // setSelectedCategories(res?.products);
+        setLoader({...loader, products: false});
+      });
+    } finally {
+      setLoader({...loader, categories: false});
+    }
+
+    try {
+      GET_ALL_CATOGERIES((res: FModelListing) => {
+        setListCatogeries(res?.categories);
+        if (res?.categories.length > 0) {
+          setSelectedCategories(res?.categories[0]._id);
+          getProductByCatogeryID(res?.categories[0]._id);
+        }
+        setLoader({...loader, categories: false});
+      });
+    } catch (error) {
+    } finally {
+      setLoader({...loader, categories: false});
+    }
+
+    return () => {
+      setLoader({...loader, categories: false, products: false});
+    };
+  };
+
+  const getProductByCatogeryID = (id: string) => {
+    try {
+      GET_FOOD_BY_CATOGERY_ID(id, async res => {
+        setProductByCatogeries(res?.foods);
+        setLoader({...loader, categories: false});
+      });
+    } catch (error) {
+    } finally {
+      setLoader({...loader, categories: false});
+    }
+  };
+
+  const getAllDiscountedFoods = () => {
+    try {
+      setLoader({...loader, discountedItems: true});
+
+      GET_DISCOUNTED_PRICE((res: FModelListing) => {
+        setDiscountedPriceItems(res?.food);
+        console.log('res', JSON.stringify(res?.foods, null, 2));
+        setLoader({...loader, discountedItems: false});
+      });
+    } catch (error) {
+    } finally {
+      setLoader({...loader, discountedItems: false});
+    }
+  };
   /**
-  * render header
-  */
+   * render header
+   */
   const renderHeader = () => {
     return (
       <View style={styles.headerContainer}>
         <View style={styles.viewLeft}>
           <Image
             source={images.user1}
-            resizeMode='contain'
+            resizeMode="contain"
             style={styles.userIcon}
           />
           <View style={styles.viewNameContainer}>
             <Text style={styles.greeeting}>Good Morning👋</Text>
-            <Text style={[styles.title, {
-              color: dark ? COLORS.white : COLORS.greyscale900
-            }]}>Andrew Ainsley</Text>
+            <Text
+              style={[
+                styles.title,
+                {
+                  color: dark ? COLORS.white : COLORS.greyscale900,
+                },
+              ]}>
+              {user?.name}
+            </Text>
           </View>
         </View>
         <View style={styles.viewRight}>
           <TouchableOpacity
-            onPress={() => navigation.navigate("notifications")}>
+            onPress={() => navigation.navigate('notifications')}>
             <Image
               source={icons.notificationBell2}
-              resizeMode='contain'
-              style={[styles.bellIcon, { tintColor: dark ? COLORS.white : COLORS.greyscale900 }]}
+              resizeMode="contain"
+              style={[
+                styles.bellIcon,
+                {tintColor: dark ? COLORS.white : COLORS.greyscale900},
+              ]}
             />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("favourite")}>
+          <TouchableOpacity onPress={() => navigation.navigate('favourite')}>
             <Image
               source={icons.heartOutline}
-              resizeMode='contain'
-              style={[styles.bookmarkIcon, { tintColor: dark ? COLORS.white : COLORS.greyscale900 }]}
+              resizeMode="contain"
+              style={[
+                styles.bookmarkIcon,
+                {tintColor: dark ? COLORS.white : COLORS.greyscale900},
+              ]}
             />
           </TouchableOpacity>
         </View>
       </View>
-    )
-  }
+    );
+  };
 
   /**
-  * Render search bar
-  */
+   * Render search bar
+   */
   const renderSearchBar = () => {
-
     const handleInputFocus = () => {
-      // Redirect to another screen
       navigation.navigate('search');
     };
 
     return (
       <TouchableOpacity
-        onPress={() => navigation.navigate("search")}
-        style={[styles.searchBarContainer, {
-          backgroundColor: dark ? COLORS.dark2 : COLORS.secondaryWhite
-        }]}>
-        <TouchableOpacity>
+        onPress={() => navigation.navigate('search')}
+        style={[
+          styles.searchBarContainer,
+          {
+            backgroundColor: dark ? COLORS.dark2 : COLORS.secondaryWhite,
+          },
+        ]}>
+        <TouchableOpacity onPress={handleInputFocus}>
           <Image
             source={icons.search2}
-            resizeMode='contain'
+            resizeMode="contain"
             style={styles.searchIcon}
           />
         </TouchableOpacity>
         <TextInput
-          placeholder='Search'
+          placeholder="Search"
           placeholderTextColor={COLORS.gray}
           style={styles.searchInput}
-          onFocus={handleInputFocus}
+          // onFocus={handleInputFocus}
+          onPress={handleInputFocus}
         />
-        <TouchableOpacity>
+        <TouchableOpacity onPress={handleInputFocus}>
           <Image
             source={icons.filter}
-            resizeMode='contain'
+            resizeMode="contain"
             style={styles.filterIcon}
           />
         </TouchableOpacity>
       </TouchableOpacity>
-    )
-  }
+    );
+  };
 
   /**
-* Render banner
-*/
+   * Render banner
+   */
   const renderBanner = () => {
     return (
       <View style={styles.bannerItemContainer}>
@@ -157,9 +278,9 @@ const Home = () => {
           showsHorizontalScrollIndicator={false}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.5}
-          onMomentumScrollEnd={(event) => {
+          onMomentumScrollEnd={event => {
             const newIndex = Math.round(
-              event.nativeEvent.contentOffset.x / SIZES.width
+              event.nativeEvent.contentOffset.x / SIZES.width,
             );
             setCurrentIndex(newIndex);
           }}
@@ -168,98 +289,97 @@ const Home = () => {
           {banners.map((_, index) => renderDot(index))}
         </View>
       </View>
-    )
-  }
+    );
+  };
 
   /**
- * Render categories
- */
+   * Render categories
+   */
   const renderCategories = () => {
-
     return (
       <View>
         <SubHeaderItem
           title="Categories"
           navTitle="See all"
-          onPress={() => navigation.navigate("categories")}
+          onPress={() => navigation.navigate('categories')}
         />
         <FlatList
-          data={categories.slice(0, 8)}
+          data={listCatogeries?.length > 0 ? listCatogeries.slice(0, 8) : []}
           keyExtractor={(item, index) => index.toString()}
           horizontal={false}
           numColumns={4} // Render two items per row
-          renderItem={({ item, index }) => (
+          renderItem={({item, index}) => (
             <Category
-              name={item.name}
-              icon={item.icon}
+              name={item?.name || item?.name}
+              icon={item?.image || item?.image}
               backgroundColor={dark ? COLORS.dark2 : COLORS.white}
               onPress={() => {
-                if (item.onPress !== null) {
-                  navigation.navigate(item.onPress);
+                if (item !== null) {
+                  // navigation.navigate(item);
                 }
               }}
             />
           )}
         />
       </View>
-    )
-  }
-
+    );
+  };
 
   /**
    * render discount foods
    */
   const renderDiscountedFoods = () => {
-
     return (
       <View>
         <SubHeaderItem
           title="Discount guaranteed!👌"
           navTitle="See all"
-          onPress={() => navigation.navigate("discountfoods")}
+          onPress={() => navigation.navigate('discountfoods')}
         />
-        <View style={{
-          backgroundColor: dark ? COLORS.dark1 : COLORS.secondaryWhite,
-          marginVertical: 16
-        }}>
+        <View
+          style={{
+            backgroundColor: dark ? COLORS.dark1 : COLORS.secondaryWhite,
+            marginVertical: 16,
+          }}>
           <FlatList
-            data={discountProducts}
-            keyExtractor={item => item.id}
+            data={discountedPriceItems || []}
+            keyExtractor={item => item._id}
             horizontal
             showsHorizontalScrollIndicator={false}
-            renderItem={({ item }) => {
+            renderItem={({item}) => {
               return (
                 <VerticalFoodCard
-                  name={item.name}
-                  image={item.image}
-                  distance={item.distance}
-                  price={item.price}
-                  fee={item.fee}
-                  rating={item.rating}
-                  numReviews={item.numReviews}
-                  onPress={() => navigation.navigate("fooddetails")}
+                  name={item?.name}
+                  image={item?.image}
+                  distance={item?.distance}
+                  price={item?.price}
+                  fee={item?.fee}
+                  rating={item?.rating}
+                  numReviews={item?.numReviews}
+                  onPress={() =>
+                    navigation.navigate('fooddetails', {
+                      itemId: item?._id,
+                    })
+                  }
                 />
-              )
+              );
             }}
           />
         </View>
       </View>
-    )
-  }
+    );
+  };
 
   /**
    * render recommended foods
    */
   const renderRecommendedFoods = () => {
-    const [selectedCategories, setSelectedCategories] = useState(["1"]);
-
-    const filteredFoods = recommendedProducts.filter(food => selectedCategories.includes("1") || selectedCategories.includes(food.categoryId));
-
-    // Category item
-    const renderCategoryItem = ({ item }: { item: Category }) => (
+    const renderCategoryItem = ({item}: {item: any}) => (
       <TouchableOpacity
         style={{
-          backgroundColor: selectedCategories.includes(item.id) ? COLORS.primary : "transparent",
+          backgroundColor: selectedCategories.includes(item?._id)
+            ? COLORS.primary
+            : 'transparent',
           padding: 10,
           marginVertical: 5,
           borderColor: COLORS.primary,
@@ -267,138 +387,146 @@ const Home = () => {
           borderRadius: 24,
           marginRight: 12,
         }}
-        onPress={() => toggleCategory(item.id)}
-      >
-        <Text style={{
-          color: selectedCategories.includes(item.id) ? COLORS.white : COLORS.primary
-        }}>{item.name}</Text>
+        key={item?._id}
+        onPress={() => {
+          setSelectedCategories(item?._id);
+          getProductByCatogeryID(item?._id);
+        }}>
+        <Text
+          style={{
+            color: selectedCategories.includes(item?._id)
+              ? COLORS.white
+              : COLORS.primary,
+          }}>
+          {item.name}
+        </Text>
       </TouchableOpacity>
     );
-
-    // Toggle category selection
-    const toggleCategory = (categoryId: any) => {
-      const updatedCategories = [...selectedCategories];
-      const index = updatedCategories.indexOf(categoryId);
-
-      if (index === -1) {
-        updatedCategories.push(categoryId);
-      } else {
-        updatedCategories.splice(index, 1);
-      }
-
-      setSelectedCategories(updatedCategories);
-    };
 
     return (
       <View>
         <SubHeaderItem
           title="Recommended For You!😍"
           navTitle="See all"
-          onPress={() => navigation.navigate("recommendedfoods")}
+          onPress={() => navigation.navigate('recommendedfoods')}
         />
         <FlatList
-          data={categories}
+          data={listCatogeries?.length > 0 ? listCatogeries.slice(0, 8) : []}
           keyExtractor={item => item.id}
           showsHorizontalScrollIndicator={false}
           horizontal
           renderItem={renderCategoryItem}
         />
-        <View style={{
-          backgroundColor: dark ? COLORS.dark1 : COLORS.secondaryWhite,
-          marginVertical: 16
-        }}>
+        <View
+          style={{
+            backgroundColor: dark ? COLORS.dark1 : COLORS.secondaryWhite,
+            marginVertical: 16,
+          }}>
           <FlatList
-            data={filteredFoods}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => {
+            data={productByCatogeries || []}
+            keyExtractor={item => item._id?.toString()}
+            renderItem={({item}: {item: FModelListing}) => {
               return (
                 <HorizontalFoodCard
-                  name={item.name}
-                  image={item.image}
-                  distance={item.distance}
-                  price={item.price}
-                  fee={item.fee}
-                  rating={item.rating}
-                  numReviews={item.numReviews}
-                  isPromo={item.isPromo}
-                  onPress={() => navigation.navigate("fooddetails")}
+                  name={item?.name}
+                  image={item?.image}
+                  distance={item?.distance}
+                  price={item?.price}
+                  fee={item?.fee}
+                  rating={item?.rating}
+                  numReviews={item?.numReviews}
+                  isPromo={item?.isPromo}
+                  onPress={() => {
+                    navigation.navigate('fooddetails', {
+                      itemId: item?._id,
+                    });
+                  }}
                 />
-              )
+              );
             }}
           />
         </View>
       </View>
-    )
-  }
+    );
+  };
+
   return (
-    <SafeAreaView style={[styles.area, { backgroundColor: colors.background }]}>
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.area, {backgroundColor: colors.background}]}>
+      <View style={[styles.container, {backgroundColor: colors.background}]}>
         {renderHeader()}
         <ScrollView showsVerticalScrollIndicator={false}>
           {renderSearchBar()}
           {renderBanner()}
-          {renderCategories()}
-          {renderDiscountedFoods()}
-          {renderRecommendedFoods()}
+          {loader.categories === false ? (
+            renderCategories()
+          ) : (
+            <Loader {...loaderProps} />
+          )}
+          {loader.discountedItems === false && renderDiscountedFoods()}
+          {loader.products === false ? (
+            renderRecommendedFoods()
+          ) : (
+            <Loader {...loaderProps} />
+          )}
         </ScrollView>
       </View>
     </SafeAreaView>
-  )
+  );
 };
 
 const styles = StyleSheet.create({
   area: {
     flex: 1,
-    backgroundColor: COLORS.white
+    backgroundColor: COLORS.white,
   },
   container: {
     flex: 1,
     backgroundColor: COLORS.white,
-    padding: 16
+    padding: 16,
   },
   headerContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     width: SIZES.width - 32,
-    justifyContent: "space-between",
-    alignItems: "center"
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   userIcon: {
     width: 48,
     height: 48,
-    borderRadius: 32
+    borderRadius: 32,
   },
   viewLeft: {
-    flexDirection: "row",
-    alignItems: "center"
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   greeeting: {
     fontSize: 12,
-    fontFamily: "Urbanist Regular",
-    color: "gray",
-    marginBottom: 4
+    fontFamily: 'Urbanist Regular',
+    color: 'gray',
+    marginBottom: 4,
   },
   title: {
     fontSize: 20,
-    fontFamily: "Urbanist Bold",
-    color: COLORS.greyscale900
+    fontFamily: 'Urbanist Bold',
+    color: COLORS.greyscale900,
   },
   viewNameContainer: {
-    marginLeft: 12
+    marginLeft: 12,
   },
   viewRight: {
-    flexDirection: "row",
-    alignItems: "center"
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   bellIcon: {
     height: 24,
     width: 24,
     tintColor: COLORS.black,
-    marginRight: 8
+    marginRight: 8,
   },
   bookmarkIcon: {
     height: 24,
     width: 24,
-    tintColor: COLORS.black
+    tintColor: COLORS.black,
   },
   searchBarContainer: {
     width: SIZES.width - 32,
@@ -407,24 +535,24 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     height: 52,
     marginVertical: 16,
-    flexDirection: "row",
-    alignItems: "center"
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   searchIcon: {
     height: 24,
     width: 24,
-    tintColor: COLORS.gray
+    tintColor: COLORS.gray,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    fontFamily: "Urbanist Regular",
-    marginHorizontal: 8
+    fontFamily: 'Urbanist Regular',
+    marginHorizontal: 8,
   },
   filterIcon: {
     width: 24,
     height: 24,
-    tintColor: COLORS.primary
+    tintColor: COLORS.primary,
   },
   bannerContainer: {
     width: SIZES.width - 32,
@@ -432,56 +560,56 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     paddingTop: 28,
     borderRadius: 32,
-    backgroundColor: COLORS.primary
+    backgroundColor: COLORS.primary,
   },
   bannerTopContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center"
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   bannerDicount: {
     fontSize: 12,
-    fontFamily: "Urbanist Medium",
+    fontFamily: 'Urbanist Medium',
     color: COLORS.white,
-    marginBottom: 4
+    marginBottom: 4,
   },
   bannerDiscountName: {
     fontSize: 16,
-    fontFamily: "Urbanist Bold",
-    color: COLORS.white
+    fontFamily: 'Urbanist Bold',
+    color: COLORS.white,
   },
   bannerDiscountNum: {
     fontSize: 46,
-    fontFamily: "Urbanist Bold",
-    color: COLORS.white
+    fontFamily: 'Urbanist Bold',
+    color: COLORS.white,
   },
   bannerBottomContainer: {
-    marginTop: 8
+    marginTop: 8,
   },
   bannerBottomTitle: {
     fontSize: 14,
-    fontFamily: "Urbanist Medium",
-    color: COLORS.white
+    fontFamily: 'Urbanist Medium',
+    color: COLORS.white,
   },
   bannerBottomSubtitle: {
     fontSize: 14,
-    fontFamily: "Urbanist Medium",
+    fontFamily: 'Urbanist Medium',
     color: COLORS.white,
-    marginTop: 4
+    marginTop: 4,
   },
   userAvatar: {
     width: 64,
     height: 64,
-    borderRadius: 999
+    borderRadius: 999,
   },
   firstName: {
     fontSize: 16,
-    fontFamily: "Urbanist SemiBold",
+    fontFamily: 'Urbanist SemiBold',
     color: COLORS.dark2,
-    marginTop: 6
+    marginTop: 6,
   },
   bannerItemContainer: {
-    width: "100%",
+    width: '100%',
     paddingBottom: 10,
     backgroundColor: COLORS.primary,
     height: 170,
@@ -502,7 +630,7 @@ const styles = StyleSheet.create({
   },
   activeDot: {
     backgroundColor: COLORS.white,
-  }
-})
+  },
+});
 
-export default Home
+export default Home;

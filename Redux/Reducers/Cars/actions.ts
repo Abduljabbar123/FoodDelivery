@@ -1,7 +1,7 @@
-import {showSnackbar} from '../../../Components/Snackbar';
+import {showSnackbar} from '../../../components/Snackbar';
 import {ICommonResponse, TCallback} from '../../../Redux/Reducers/types';
 import {getRedux} from '../../../Redux/function';
-import Api from '../../../config/Api';
+import Api from '../../../config/API';
 import API from '../../../config/API';
 import {getError} from '../../../config/function';
 import {RentalCarDetail, RentalCarDetails} from './RentalCarDetail';

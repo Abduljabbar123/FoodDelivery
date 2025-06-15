@@ -1,14 +1,30 @@
 export default {
   LOGIN: {method: 'POST', url: 'auth/login'},
-  SIGNUP: {method: 'POST', url: 'users/'},
+  SIGNUP: {method: 'POST', url: 'users'},
+  VERIFY_EMAIL: {method: 'POST', url: 'users/verify-code'},
   FORGOT_PASSWORD: {
     method: 'PUT',
     url: 'auth/forgot/',
   },
   RESEND_EMAIL: {method: 'POST', url: 'users/resendEmailVerification'},
   CHANGE_PASSWORD: {method: 'PUT', url: 'auth/change-password/'},
-  UPDATE_USER_BY_ID: {method: 'PUT', url: 'users/'},
+  UPDATE_USER_BY_ID: {method: 'PUT', url: 'users/editProfile/'},
   DELETE_USER_BY_ID: {method: 'DELETE', url: 'users/'},
+
+  GET_PRODUCT_BY_ID: {method: 'GET', url: 'food/'},
+  GET_ALL_PRODUCTS: {method: 'GET', url: 'food'},
+  GET_ALL_DISCOUNTED_ITEMS: {
+    method: 'GET',
+    url: 'food/getDiscountedPriceItem',
+  },
+  GET_PRODUCT_BY_CATOGERY_ID: {method: 'GET', url: 'food/getFoodByCategory/'},
+
+  GET_CATOGERY_BY_ID: {method: 'GET', url: 'category/'},
+  GET_ALL_CATOGERIES: {method: 'GET', url: 'category'},
+
+  GET_ALL_CART_PRODUCT: {method: 'GET', url: 'cart'},
+  ADD_TO_CART: {method: 'POST', url: 'cart/add'},
+
   GET_USER_BY_ID: {
     method: 'GET',
     url: 'users/',

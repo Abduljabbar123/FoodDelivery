@@ -17,6 +17,7 @@ interface InputProps extends TextInputProps {
   errorText?: string[];
   onInputChanged: (id: string, text: string) => void;
   value?: string;
+  editable?: boolean;
 }
 
 const Input: FC<InputProps> = props => {
@@ -69,11 +70,13 @@ const Input: FC<InputProps> = props => {
           onChangeText={onChangeText}
           onFocus={handleFocus}
           onBlur={handleBlur}
+          hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
           style={[styles.input, {color: dark ? COLORS.white : COLORS.black}]}
           placeholder={props.placeholder}
           placeholderTextColor={props.placeholderTextColor}
           autoCapitalize="none"
           value={props?.value}
+          editable={props?.editable}
         />
       </View>
       {props.errorText && (

@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ImageSourcePropType } from 'react-native';
-import { COLORS, SIZES, icons } from '../constants';
-import { useTheme } from '../theme/ThemeProvider';
-import FontAwesome from "react-native-vector-icons/FontAwesome";
+import React, {useState} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ImageSourcePropType,
+} from 'react-native';
+import {COLORS, SIZES, icons} from '../constants';
+import {useTheme} from '../theme/ThemeProvider';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import {ENV} from '../config/env';
 
 interface VerticalFoodCardProps {
   name: string;
@@ -23,46 +31,61 @@ const VerticalFoodCard: React.FC<VerticalFoodCardProps> = ({
   fee,
   rating,
   numReviews,
-  onPress
+  onPress,
 }) => {
   const [isFavourite, setIsFavourite] = useState(false);
-  const { dark } = useTheme();
+  const {dark} = useTheme();
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[styles.container, { backgroundColor: dark ? COLORS.dark2 : COLORS.white }]}>
+      style={[
+        styles.container,
+        {backgroundColor: dark ? COLORS.dark2 : COLORS.white},
+      ]}>
       <Image
-        source={image}
+        source={{uri: ENV.resourceURL + image}}
         resizeMode="cover"
         style={styles.image}
       />
       <View style={styles.reviewContainer}>
         <Text style={styles.rating}>PROMO</Text>
       </View>
-      <Text style={[styles.name, { color: dark ? COLORS.secondaryWhite : COLORS.greyscale900 }]}>
-        {name}
+      <Text
+        style={[
+          styles.name,
+          {color: dark ? COLORS.secondaryWhite : COLORS.greyscale900},
+        ]}>
+        {name || ''}
       </Text>
       <View style={styles.viewContainer}>
-        <Text style={[styles.location, { color: dark ? COLORS.greyscale300 : COLORS.grayscale700 }]}>
+        <Text
+          style={[
+            styles.location,
+            {color: dark ? COLORS.greyscale300 : COLORS.grayscale700},
+          ]}>
           {distance} |{' '}
         </Text>
         <FontAwesome name="star" size={14} color="rgb(250, 159, 28)" />
-        <Text style={[styles.location, { color: dark ? COLORS.greyscale300 : COLORS.grayscale700 }]}>
+        <Text
+          style={[
+            styles.location,
+            {color: dark ? COLORS.greyscale300 : COLORS.grayscale700},
+          ]}>
           {' '}
-          {rating} ({numReviews})
+          {rating ? rating : 0} ({numReviews ? numReviews : 0})
         </Text>
       </View>
       <View style={styles.bottomPriceContainer}>
         <View style={styles.priceContainer}>
-          <Text style={styles.price}>{price}</Text>
-          <Text style={styles.location}> |{' '}</Text>
+          <Text style={styles.price}>{price ? price : 0.0}</Text>
+          <Text style={styles.location}> | </Text>
           <Image
             source={icons.moto}
             resizeMode="contain"
             style={styles.motoIcon}
           />
-          <Text style={styles.location}>{fee}</Text>
+          <Text style={styles.location}>{fee ? fee : 0}</Text>
         </View>
         <TouchableOpacity onPress={() => setIsFavourite(!isFavourite)}>
           <Image
@@ -93,13 +116,13 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
-    fontFamily: "Urbanist Bold",
+    fontFamily: 'Urbanist Bold',
     color: COLORS.greyscale900,
     marginVertical: 4,
   },
   location: {
     fontSize: 12,
-    fontFamily: "Urbanist Regular",
+    fontFamily: 'Urbanist Regular',
     color: COLORS.grayscale700,
     marginVertical: 4,
   },
@@ -116,7 +139,7 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 16,
-    fontFamily: "Urbanist SemiBold",
+    fontFamily: 'Urbanist SemiBold',
     color: COLORS.primary,
     marginRight: 8,
   },
@@ -141,7 +164,7 @@ const styles = StyleSheet.create({
   },
   rating: {
     fontSize: 12,
-    fontFamily: "Urbanist SemiBold",
+    fontFamily: 'Urbanist SemiBold',
     color: COLORS.white,
     marginLeft: 4,
   },

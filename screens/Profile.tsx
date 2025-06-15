@@ -21,6 +21,9 @@ import {useNavigation} from '@react-navigation/native';
 import {COLORS, icons, images, SIZES} from '../constants';
 import SettingsItem from '../components/SettingsItem';
 import Button from '../components/Button';
+import {LOGOUT} from '../Redux/Reducers/Auth/actions';
+import {showSnackbar} from '../components/Snackbar';
+import {useAppSelector} from '../Helper/Hooks/reduxHooks';
 
 type Nav = {
   navigate: (value: string) => void;
@@ -30,9 +33,8 @@ const Profile = () => {
   const refRBSheet = useRef<any>(null);
   const {dark, colors, setScheme} = useTheme();
   const {navigate} = useNavigation<Nav>();
-  /**
-   * Render header
-   */
+  const {user} = useAppSelector(state => state.auth);
+
   const renderHeader = () => {
     return (
       <TouchableOpacity style={styles.headerContainer}>
@@ -67,9 +69,7 @@ const Profile = () => {
       </TouchableOpacity>
     );
   };
-  /**
-   * Render User Profile
-   */
+
   const renderProfile = () => {
     const [image, setImage] = useState(images.user1);
 
@@ -107,21 +107,19 @@ const Profile = () => {
             styles.title,
             {color: dark ? COLORS.secondaryWhite : COLORS.greyscale900},
           ]}>
-          Nathalie Erneson
+          {user?.name}
         </Text>
         <Text
           style={[
             styles.subtitle,
             {color: dark ? COLORS.secondaryWhite : COLORS.greyscale900},
           ]}>
-          nathalie_erneson@gmail.com
+          {user?.email}
         </Text>
       </View>
     );
   };
-  /**
-   * Render Settings
-   */
+
   const renderSettings = () => {
     const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -289,6 +287,7 @@ const Profile = () => {
       </View>
     );
   };
+
   return (
     <SafeAreaView style={[styles.area, {backgroundColor: colors.background}]}>
       <View style={[styles.container, {backgroundColor: colors.background}]}>
@@ -351,7 +350,15 @@ const Profile = () => {
             title="Yes, Logout"
             filled
             style={styles.logoutButton}
-            onPress={() => refRBSheet.current.close()}
+            onPress={() => {
+              refRBSheet.current.close();
+              LOGOUT();
+              showSnackbar({
+                type: 'success',
+                body: 'Logout Successful',
+                header: 'Logout',
+              });
+            }}
           />
         </View>
       </RBSheet>

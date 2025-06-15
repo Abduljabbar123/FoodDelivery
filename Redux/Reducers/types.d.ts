@@ -10,6 +10,16 @@ interface TUserLocation {
   longitude: number | null;
 }
 
+interface UserVerifyEmail {
+  email: string | null;
+  code: number | null;
+}
+
+interface UserVerifyEmailResponse {
+  email: string | null;
+  code: number | null;
+}
+
 interface TUserCarFilterData {
   carFilterData: {
     minPrice: number | undefined;
@@ -39,7 +49,7 @@ export type TAuth = {
 interface TUser extends TMongoCommon {
   _id: string;
   name: string;
-  role: 'renter' | 'owner' | null;
+  role: 'driver' | 'resturant' | 'user' | null;
   email: string;
   password: string;
   phone_no: string;
@@ -48,6 +58,7 @@ interface TUser extends TMongoCommon {
   verify_by_email: boolean;
   address: Address[];
   status?: string;
+  dob: string;
   user_data: {
     account_details?: Array;
     description: string;

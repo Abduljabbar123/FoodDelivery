@@ -1,4 +1,4 @@
-import {showSnackbar} from '../../../Components/Snackbar';
+import {showSnackbar} from '../../../components/Snackbar';
 import {ICommonResponse, TCallback} from '../../../Redux/Reducers/types';
 import Api from '../../../Service/Api';
 import API from '../../../config/API';

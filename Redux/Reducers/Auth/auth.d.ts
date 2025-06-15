@@ -1,5 +1,5 @@
-import {TUser} from 'src/Redux/Reducers/types';
-
+import {TUser} from '../../Reducers/types';
+import {UserVerifyEmailResponse, UserVerifyEmail} from '../../Reducers/types';
 export interface ILogin {
   otp: number | string;
   email: number | string;
@@ -19,4 +19,12 @@ export interface ILoginResponse extends ICommonResponse {
 }
 export interface ISignupResponse extends ICommonResponse {
   user: TUser;
+}
+
+export interface IVerifyEmailResponse extends ICommonResponse {
+  user: UserVerifyEmailResponse;
+}
+
+export interface VerifyEmailBody extends ICommonResponse {
+  user: UserVerifyEmail;
 }

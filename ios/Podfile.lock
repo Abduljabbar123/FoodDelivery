@@ -1277,6 +1277,8 @@ PODS:
     - Yoga
   - react-native-maps (1.20.1):
     - React-Core
+  - react-native-netinfo (11.4.1):
+    - React-Core
   - react-native-pager-view (6.7.0):
     - DoubleConversion
     - glog
@@ -1717,6 +1719,27 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - RNPermissions (5.3.0):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.11.18.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - RNScreens (4.10.0):
     - DoubleConversion
     - glog
@@ -1874,6 +1897,7 @@ DEPENDENCIES:
   - react-native-google-maps (from `../node_modules/react-native-maps`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
   - react-native-maps (from `../node_modules/react-native-maps`)
+  - "react-native-netinfo (from `../node_modules/@react-native-community/netinfo`)"
   - react-native-pager-view (from `../node_modules/react-native-pager-view`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
@@ -1908,6 +1932,7 @@ DEPENDENCIES:
   - "RNCCheckbox (from `../node_modules/@react-native-community/checkbox`)"
   - "RNCClipboard (from `../node_modules/@react-native-clipboard/clipboard`)"
   - "RNCPicker (from `../node_modules/@react-native-picker/picker`)"
+  - RNPermissions (from `../node_modules/react-native-permissions`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNVectorIcons (from `../node_modules/react-native-vector-icons`)
@@ -2006,6 +2031,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-image-picker"
   react-native-maps:
     :path: "../node_modules/react-native-maps"
+  react-native-netinfo:
+    :path: "../node_modules/@react-native-community/netinfo"
   react-native-pager-view:
     :path: "../node_modules/react-native-pager-view"
   react-native-safe-area-context:
@@ -2074,6 +2101,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-clipboard/clipboard"
   RNCPicker:
     :path: "../node_modules/@react-native-picker/picker"
+  RNPermissions:
+    :path: "../node_modules/react-native-permissions"
   RNScreens:
     :path: "../node_modules/react-native-screens"
   RNSVG:
@@ -2129,6 +2158,7 @@ SPEC CHECKSUMS:
   react-native-google-maps: 7cc1184afe41fbd15a3dffd53c924819f6587b69
   react-native-image-picker: 0452fc9efc21101946746663bf34e0db5741f00c
   react-native-maps: ee1e65647460c3d41e778071be5eda10e3da6225
+  react-native-netinfo: f0a9899081c185db1de5bb2fdc1c88c202a059ac
   react-native-pager-view: e26e7a6f1ffb0c12ebfaf858ff9100b054de043d
   react-native-safe-area-context: 286b3e7b5589795bb85ffc38faf4c0706c48a092
   React-NativeModulesApple: fb48894de492e6f9a73e53d8f92a6a792e40666c
@@ -2163,12 +2193,13 @@ SPEC CHECKSUMS:
   RNCCheckbox: a3ca9978cb0846b981d28da4e9914bd437403d77
   RNCClipboard: 7659a79c651d0e889bbd533dcc8bc8ff1e98ed70
   RNCPicker: ffbd7b9fc7c1341929e61dbef6219f7860f57418
+  RNPermissions: e2a5dd8d9b6c3b4cd58f2fe3c5f39f085717b590
   RNScreens: 0f01bbed9bd8045a8d58e4b46993c28c7f498f3c
   RNSVG: 8588ee1ca9b2e6fd2c99466e35b3db0e9f81bb40
   RNVectorIcons: 14a0c42f16a26bcc3e79a19bc1c5718284b1d469
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: dea3cbe52f93ef8f722493a505c1add295fe7fba
 
-PODFILE CHECKSUM: 0068cb3d951a26db177e26dd8e1e94e16ffe7c96
+PODFILE CHECKSUM: a7e886f265c36dbecf51a2b53666418d5673712a
 
 COCOAPODS: 1.16.2

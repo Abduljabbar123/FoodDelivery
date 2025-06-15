@@ -1,25 +1,46 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, StatusBar } from 'react-native';
-import React, { useRef, useState } from 'react';
-import { COLORS, SIZES, icons, images, socials } from '../constants';
-import { useTheme } from '../theme/ThemeProvider';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  TextInput,
+  StatusBar,
+} from 'react-native';
+import React, {useRef, useState} from 'react';
+import {COLORS, SIZES, icons, images, socials} from '../constants';
+import {useTheme} from '../theme/ThemeProvider';
 import AutoSlider from '../components/AutoSlider';
-import { ScrollView } from 'react-native-virtualized-view';
-import RBSheet from "react-native-raw-bottom-sheet";
+import {ScrollView} from 'react-native-virtualized-view';
+import RBSheet from 'react-native-raw-bottom-sheet';
 import SocialIcon from '../components/SocialIcon';
 import Button from '../components/Button';
-import { NavigationProp, useNavigation } from '@react-navigation/native';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {ADD_TO_CART} from '../Redux/Reducers/FoodListing/action';
+import Loader from '../components/Loader';
 
-const FoodDetailsAddItem = () => {
+const FoodDetailsAddItem = (props: any) => {
   const navigation = useNavigation<NavigationProp<any>>();
-  const { colors, dark } = useTheme();
+  const {colors, dark} = useTheme();
   const refRBSheet = useRef<any>(null);
+  const productId = props?.route?.params?.itemId;
+  const productDetail = props?.route?.params?.productDetail;
+  const [count, setCount] = useState(1); // Initial count value
+  const [loading, setLoading] = useState(false);
+
+  console.log('ADD TO CART PRODUCT ID ====> ', productId);
+  console.log(
+    'ADD TO CART PRODUCT DETAIL ====> ',
+    JSON.stringify(productDetail, null, 2),
+  );
 
   // Slider images
   const sliderImages = [
-    images.vetDiet1,
-    images.vetDiet1,
-    images.vetDiet1,
-    images.vetDiet1,
+    // images.vetDiet1,
+    productDetail?.image,
+    productDetail?.image,
+    productDetail?.image,
+    productDetail?.image,
   ];
 
   // render header
@@ -28,21 +49,19 @@ const FoodDetailsAddItem = () => {
 
     return (
       <View style={styles.headerContainer}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Image
             source={icons.back}
-            resizeMode='contain'
+            resizeMode="contain"
             style={styles.backIcon}
           />
         </TouchableOpacity>
 
         <View style={styles.iconContainer}>
-          <TouchableOpacity
-            onPress={() => setIsFavorite(!isFavorite)}>
+          <TouchableOpacity onPress={() => setIsFavorite(!isFavorite)}>
             <Image
               source={isFavorite ? icons.heart2 : icons.heart2Outline}
-              resizeMode='contain'
+              resizeMode="contain"
               style={styles.bookmarkIcon}
             />
           </TouchableOpacity>
@@ -51,22 +70,19 @@ const FoodDetailsAddItem = () => {
             onPress={() => refRBSheet.current.open()}>
             <Image
               source={icons.send2}
-              resizeMode='contain'
+              resizeMode="contain"
               style={styles.sendIcon}
             />
           </TouchableOpacity>
         </View>
       </View>
-    )
-  }
-
+    );
+  };
 
   // render content
   const renderContent = () => {
     const [expanded, setExpanded] = useState(false);
-    const [count, setCount] = useState(1); // Initial count value
 
-    const description = `Give your pet the nourishment they deserve with our Premium Chicken Dry Food! Made with high-quality chicken as the first ingredient, this nutritious blend is packed with essential vitamins, minerals, and protein to support strong muscles and overall well-being. Each crunchy bite delivers a delicious taste your pet will love, while promoting healthy digestion, a shiny coat, and sustained energy throughout the day. Ideal for everyday feeding, our Premium Chicken Dry Food is the perfect choice for pet owners who care about quality and flavor. Treat your furry friend to the best – order now!`;
     const toggleExpanded = () => {
       setExpanded(!expanded);
     };
@@ -82,71 +98,131 @@ const FoodDetailsAddItem = () => {
     };
     return (
       <View style={styles.contentContainer}>
-        <Text style={[styles.headerContentTitle, {
-          color: dark ? COLORS.white : COLORS.greyscale900,
-        }]}>
-          Premium Chicken Dry Food
+        <Text
+          style={[
+            styles.headerContentTitle,
+            {
+              color: dark ? COLORS.white : COLORS.greyscale900,
+            },
+          ]}>
+          {productDetail ? productDetail?.name : ''}
         </Text>
-        <View style={[styles.separateLine, {
-          marginVertical: 12,
-          backgroundColor: dark ? COLORS.grayscale700 : COLORS.grayscale200
-        }]} />
-        <Text style={[styles.description, {
-          color: dark ? COLORS.grayscale400 : COLORS.grayscale700,
-        }]} numberOfLines={expanded ? undefined : 4}>{description}</Text>
+        <View
+          style={[
+            styles.separateLine,
+            {
+              marginVertical: 12,
+              backgroundColor: dark ? COLORS.grayscale700 : COLORS.grayscale200,
+            },
+          ]}
+        />
+        <Text
+          style={[
+            styles.description,
+            {
+              color: dark ? COLORS.grayscale400 : COLORS.grayscale700,
+            },
+          ]}
+          numberOfLines={expanded ? undefined : 4}>
+          {productDetail?.description ? productDetail?.description : ''}
+        </Text>
         <TouchableOpacity onPress={toggleExpanded}>
           <Text style={styles.viewBtn}>
             {expanded ? 'View Less' : 'View More'}
           </Text>
         </TouchableOpacity>
         <View style={styles.addItemContainer}>
-          <TouchableOpacity style={[styles.addItemBtn, {
-            borderColor: dark ? COLORS.grayscale700 : COLORS.grayscale200
-          }]} onPress={decreaseCount}>
+          <TouchableOpacity
+            style={[
+              styles.addItemBtn,
+              {
+                borderColor: dark ? COLORS.grayscale700 : COLORS.grayscale200,
+              },
+            ]}
+            onPress={decreaseCount}>
             <Text style={styles.addItemBtnText}>-</Text>
           </TouchableOpacity>
           <Text style={styles.addItemText}>{count}</Text>
-          <TouchableOpacity style={[styles.addItemBtn, {
-            borderColor: dark ? COLORS.grayscale700 : COLORS.grayscale200
-          }]} onPress={increaseCount}>
+          <TouchableOpacity
+            style={[
+              styles.addItemBtn,
+              {
+                borderColor: dark ? COLORS.grayscale700 : COLORS.grayscale200,
+              },
+            ]}
+            onPress={increaseCount}>
             <Text style={styles.addItemBtnText}>+</Text>
           </TouchableOpacity>
         </View>
 
         <TextInput
-          placeholder='Note to Store (optional)'
+          placeholder="Note to Store (optional)"
           placeholderTextColor={COLORS.grayscale700}
-          style={[styles.input, {
-            backgroundColor: dark ? COLORS.dark2 : COLORS.tertiaryWhite,
-            borderColor: dark ? COLORS.grayscale700 : COLORS.grayscale200,
-          }]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: dark ? COLORS.dark2 : COLORS.tertiaryWhite,
+              borderColor: dark ? COLORS.grayscale700 : COLORS.grayscale200,
+            },
+          ]}
           multiline={true}
         />
       </View>
-    )
-  }
+    );
+  };
+
+  const addToCart = () => {
+    let data = {
+      foodId: productId,
+      quantity: count,
+    };
+    console.log('ADD TO CART DATA ====> ', JSON.stringify(data, null, 2));
+
+    setLoading(true);
+    try {
+      ADD_TO_CART(data, (res: any) => {
+        if (res.success) {
+          setLoading(false);
+          navigation.navigate('checkoutorders', {
+            productId: productId,
+            productDetail: productDetail,
+            quantity: count,
+          });
+        } else {
+          console.log('error =======>', res?.message);
+        }
+      });
+    } catch (error) {
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <View style={[styles.area, { backgroundColor: colors.background }]}>
+    <View style={[styles.area, {backgroundColor: colors.background}]}>
       <StatusBar hidden />
       <AutoSlider images={sliderImages} />
       {renderHeader()}
       <ScrollView showsVerticalScrollIndicator={false}>
         {renderContent()}
       </ScrollView>
-      <Button
-        title="Add To Basket"
-        filled
-        style={styles.btn}
-        onPress={() => navigation.navigate("checkoutorders")}
-      />
+      {loading ? (
+        <Loader />
+      ) : (
+        <Button
+          title="Add To Basket"
+          filled
+          style={styles.btn}
+          onPress={() => addToCart()}
+        />
+      )}
       <RBSheet
         ref={refRBSheet}
         closeOnPressMask={true}
         height={360}
         customStyles={{
           wrapper: {
-            backgroundColor: "rgba(0,0,0,0.5)",
+            backgroundColor: 'rgba(0,0,0,0.5)',
           },
           draggableIcon: {
             backgroundColor: dark ? COLORS.dark3 : COLORS.grayscale200,
@@ -156,16 +232,27 @@ const FoodDetailsAddItem = () => {
             borderTopLeftRadius: 32,
             height: 360,
             backgroundColor: dark ? COLORS.dark2 : COLORS.white,
-            alignItems: "center",
-          }
+            alignItems: 'center',
+          },
         }}>
-        <Text style={[styles.bottomTitle, {
-          color: dark ? COLORS.white : COLORS.greyscale900
-        }]}>Share</Text>
-        <View style={[styles.separateLine, {
-          backgroundColor: dark ? COLORS.grayscale700 : COLORS.grayscale200,
-          marginVertical: 12
-        }]} />
+        <Text
+          style={[
+            styles.bottomTitle,
+            {
+              color: dark ? COLORS.white : COLORS.greyscale900,
+            },
+          ]}>
+          Share
+        </Text>
+        <View
+          style={[
+            styles.separateLine,
+            {
+              backgroundColor: dark ? COLORS.grayscale700 : COLORS.grayscale200,
+              marginVertical: 12,
+            },
+          ]}
+        />
         <View style={styles.socialContainer}>
           <SocialIcon
             icon={socials.whatsapp}
@@ -212,120 +299,120 @@ const FoodDetailsAddItem = () => {
         </View>
       </RBSheet>
     </View>
-  )
+  );
 };
 
 const styles = StyleSheet.create({
   area: {
     flex: 1,
-    backgroundColor: COLORS.white
+    backgroundColor: COLORS.white,
   },
   container: {
     flex: 1,
     backgroundColor: COLORS.white,
-    padding: 16
+    padding: 16,
   },
   headerContainer: {
     width: SIZES.width - 32,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    position: "absolute",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    position: 'absolute',
     top: 32,
     zIndex: 999,
     left: 16,
-    right: 16
+    right: 16,
   },
   backIcon: {
     width: 24,
     height: 24,
-    tintColor: COLORS.white
+    tintColor: COLORS.black,
   },
   bookmarkIcon: {
     width: 24,
     height: 24,
-    tintColor: COLORS.white
+    tintColor: COLORS.black,
   },
   sendIcon: {
     width: 24,
     height: 24,
-    tintColor: COLORS.white
+    tintColor: COLORS.black,
   },
   sendIconContainer: {
-    marginLeft: 8
+    marginLeft: 8,
   },
   iconContainer: {
-    flexDirection: "row",
-    alignItems: "center"
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   contentContainer: {
-    marginHorizontal: 12
+    marginHorizontal: 12,
   },
   separateLine: {
     width: SIZES.width - 32,
     height: 1,
-    backgroundColor: COLORS.grayscale200
+    backgroundColor: COLORS.grayscale200,
   },
   bottomTitle: {
     fontSize: 24,
-    fontFamily: "Urbanist SemiBold",
+    fontFamily: 'Urbanist SemiBold',
     color: COLORS.black,
-    textAlign: "center",
-    marginTop: 12
+    textAlign: 'center',
+    marginTop: 12,
   },
   socialContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginVertical: 12,
-    width: SIZES.width - 32
+    width: SIZES.width - 32,
   },
   headerContentTitle: {
     fontSize: 28,
-    fontFamily: "Urbanist Bold",
+    fontFamily: 'Urbanist Bold',
     color: COLORS.black,
-    marginTop: 12
+    marginTop: 12,
   },
   description: {
     fontSize: 14,
     color: COLORS.grayscale700,
-    fontFamily: "Urbanist Regular",
+    fontFamily: 'Urbanist Regular',
   },
   viewBtn: {
     color: COLORS.primary,
     marginTop: 5,
     fontSize: 14,
-    fontFamily: "Urbanist SemiBold",
+    fontFamily: 'Urbanist SemiBold',
   },
   subItemContainer: {
     width: SIZES.width - 32,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   addItemContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 22
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 22,
   },
   addItemBtn: {
     height: 52,
     width: 52,
     borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     borderColor: COLORS.grayscale200,
-    borderWidth: 1
+    borderWidth: 1,
   },
   addItemBtnText: {
     fontSize: 24,
     color: COLORS.primary,
-    fontFamily: "Urbanist Medium"
+    fontFamily: 'Urbanist Medium',
   },
   addItemText: {
     fontSize: 20,
     color: COLORS.greyscale900,
-    fontFamily: "Urbanist SemiBold",
-    marginHorizontal: 22
+    fontFamily: 'Urbanist SemiBold',
+    marginHorizontal: 22,
   },
   input: {
     width: SIZES.width - 32,
@@ -335,16 +422,16 @@ const styles = StyleSheet.create({
     borderColor: COLORS.grayscale200,
     paddingHorizontal: 10,
     fontSize: 14,
-    fontFamily: "Urbanist Regular",
+    fontFamily: 'Urbanist Regular',
     color: COLORS.grayscale700,
     marginVertical: 12,
-    backgroundColor: COLORS.tertiaryWhite
+    backgroundColor: COLORS.tertiaryWhite,
   },
   btn: {
     width: SIZES.width - 32,
     marginHorizontal: 16,
-    marginBottom: 24
-  }
-})
+    marginBottom: 24,
+  },
+});
 
-export default FoodDetailsAddItem
+export default FoodDetailsAddItem;

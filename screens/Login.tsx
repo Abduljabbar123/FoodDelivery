@@ -21,13 +21,18 @@ import SocialButton from '../components/SocialButton';
 import OrSeparator from '../components/OrSeparator';
 import {useTheme} from '../theme/ThemeProvider';
 import {useNavigation} from '@react-navigation/native';
+import {LOGIN} from '../Redux/Reducers/Auth/actions';
+import {showSnackbar} from '../components/Snackbar';
+import Loader from '../components/Loader';
 
 const isTestMode = true;
 
 const initialState = {
   inputValues: {
-    email: isTestMode ? 'example@gmail.com' : '',
-    password: isTestMode ? '**********' : '',
+    // email: isTestMode ? 'example@gmail.com' : '',
+    // password: isTestMode ? '**********' : '',
+    email: '',
+    password: '',
   },
   inputValidities: {
     email: false,
@@ -82,9 +87,37 @@ const Login = () => {
   };
 
   const login = () => {
+    console.log('formState', formState);
+
+    if (!formState?.inputValues?.email) {
+      showSnackbar({
+        type: 'error',
+        body: 'please enter the email',
+        header: 'Validation failed',
+      });
+      return;
+    }
+    if (!formState?.inputValues?.password) {
+      showSnackbar({
+        type: 'error',
+        body: 'please enter the password',
+        header: 'Validation failed',
+      });
+      return;
+    }
+    setLoader(true);
     try {
-      setLoader(true);
-    } catch (error) {}
+      LOGIN(formState.inputValues, (res: any) => {
+        setLoader(false);
+        if (res.success) {
+        } else {
+        }
+      });
+    } catch (error) {
+      console.log('login catch error', error);
+    } finally {
+      setLoader(false);
+    }
   };
 
   return (
@@ -102,7 +135,7 @@ const Login = () => {
             backgroundColor: colors.background,
           },
         ]}>
-        <Header title="" />
+        <Header title="Login" onPress={() => navigate('welcome')} />
         <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.logoContainer}>
             <Image
@@ -164,12 +197,18 @@ const Login = () => {
               </View>
             </View>
           </View>
-          <Button
-            title="Login"
-            filled
-            onPress={() => navigate('(tabs)')}
-            style={styles.button}
-          />
+          {loader ? (
+            <Loader text="Loading..." color={COLORS.primary} size={50} />
+          ) : (
+            <Button
+              title="Login"
+              filled
+              onPress={() => {
+                login();
+              }}
+              style={styles.button}
+            />
+          )}
           <TouchableOpacity onPress={() => navigate('forgotpasswordmethods')}>
             <Text style={styles.forgotPasswordBtnText}>
               Forgot the password?

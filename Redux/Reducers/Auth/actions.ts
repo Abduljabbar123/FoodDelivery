@@ -1,13 +1,16 @@
 import {
   ILoginResponse,
   ISignupResponse,
+  IVerifyEmailResponse,
+  VerifyEmailBody,
 } from '../../../Redux/Reducers/Auth/auth';
-import {showSnackbar} from '../../../Components/Snackbar';
+import {showSnackbar} from '../../../components/Snackbar';
 import {ICommonResponse, TCallback} from '../../../Redux/Reducers/types';
 import {getRedux} from '../../../Redux/function';
 import Api from '../../../Service/Api';
 import API from '../../../config/API';
 import {getError} from '../../../config/function';
+import {ENV} from '../../../config/env';
 export const USER_LOGOUT = 'USER_LOGOUT';
 export const USER_LOGIN = 'USER_LOGIN';
 export const BOARDING_COMPLETE = 'BOARDING_COMPLETE';
@@ -22,6 +25,7 @@ export const BOARDING = () => {
   const {dispatch} = getRedux();
   dispatch({type: BOARDING_COMPLETE});
 };
+
 export const SElECTED_USER = (data: 'renter' | 'owner') => {
   const {dispatch} = getRedux();
   dispatch({type: USER_TYPE, payload: data});
@@ -41,7 +45,6 @@ export const USER_RESET_LOCATION = () => {
 };
 
 export const LOGIN = (
-  userType: string | null,
   data: any,
   callback: TCallback<
     | (ILoginResponse & {validate?: boolean})
@@ -53,34 +56,24 @@ export const LOGIN = (
   Api.request({method, url, data})
     .then((res: ILoginResponse) => {
       callback(res);
+      console.log('LOGIN RESPONSE', res);
       if (res !== undefined) {
-        if (res?.user?.role !== userType) {
-          showSnackbar({
-            type: 'error',
-            header: 'Unauthorized Access',
-            body: `Only ${userType} can login here.`,
-          });
-        } else {
-          dispatch({type: USER_LOGIN, payload: res});
-          showSnackbar({
-            type: 'success',
-            header: 'Success',
-            body: 'Login Successful.',
-            interval: 1000,
-          });
-        }
+        console.log('LOGIN RESPONSE', res);
+        dispatch({type: USER_LOGIN, payload: res});
+        showSnackbar({
+          type: 'success',
+          header: 'Success',
+          body: 'Login Successful.',
+          interval: 1000,
+        });
       }
     })
     .catch(error => {
-      // crashlytics().log('LOGIN: LOGIN USER.');
-      // crashlytics().recordError(error);
-      console.log('📢 [actions.ts:02]', error);
-      showSnackbar({
-        type: 'error',
-        header: 'Error',
-        body: getError(error),
-      });
-
+      // showSnackbar({
+      //   type: 'error',
+      //   header: 'Error',
+      //   body: getError(error),
+      // });
       callback(error?.response?.data);
     });
 };
@@ -131,9 +124,9 @@ export const SIGN_UP = (
   data: any,
   callback: TCallback<ICommonResponse | ISignupResponse>,
 ) => {
-  // console.log('signup data', JSON.stringify(data, null, 2));
+  console.log('signup data', JSON.stringify(data, null, 2));
   const {method, url} = API.SIGNUP;
-  console.log('url', url);
+  console.log('url', ENV.base_url + url);
   Api.formRequest({method, url, data})
     .then((res: ISignupResponse) => {
       callback(res);
@@ -142,6 +135,29 @@ export const SIGN_UP = (
       console.log('📢 [Auth.ts:01]', error);
       // crashlytics().log('SIGN_UP: SIGNUP USER.');
       // crashlytics().recordError(error);
+      showSnackbar({
+        type: 'error',
+        body: getError(error),
+        header: 'Error',
+      });
+      callback({success: false, message: error.message});
+    });
+};
+
+export const VERIFY_EMAIL = (
+  data: any,
+  callback: TCallback<ICommonResponse | ISignupResponse>,
+) => {
+  console.log('verify-email data', JSON.stringify(data, null, 2));
+  const {method, url} = API.VERIFY_EMAIL;
+  console.log('url', ENV.base_url + url);
+  Api.request({method, url, data})
+    .then((res: ISignupResponse) => {
+      console.log('res', JSON.stringify(res, null, 2));
+      callback(res);
+    })
+    .catch(error => {
+      console.log('📢 VERIFY_EMAIL ERROR', error);
       showSnackbar({
         type: 'error',
         body: getError(error),
@@ -210,7 +226,7 @@ export const CHANGE_PASSWORD = (
     });
 };
 
-export const UPDATE_USER = (
+export const UPDATE_USERPROFILE = (
   userId: string,
   data: any,
   callback: TCallback<ICommonResponse>,
