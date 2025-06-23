@@ -13,10 +13,17 @@ import {COLORS, SIZES, icons, images} from '../constants';
 import Header from '../components/Header';
 import {ScrollView} from 'react-native-virtualized-view';
 import Button from '../components/Button';
-import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {
+  NavigationProp,
+  useNavigation,
+  useFocusEffect,
+} from '@react-navigation/native';
 import OrderSummaryCard from '../components/OrderSummaryCard';
 import {GET_ALL_PRODUCT_CART} from '../Redux/Reducers/FoodListing/action';
 import {FModelListing} from '../Redux/Reducers/FoodListing/actions';
+import {useSelector} from 'react-redux';
+import {RootState} from '../Redux/ConfigureStore';
+import {getDefaultAddress} from '../Redux/Reducers/Address/actions';
 
 const CheckoutOrders = (props: any) => {
   const navigation = useNavigation<NavigationProp<any>>();
@@ -28,13 +35,33 @@ const CheckoutOrders = (props: any) => {
   const [cartList, setCartList] = useState([]);
   const [cartItem, setCartItem] = useState({});
 
+  // Get default address from Redux store
+  const {defaultAddress} = useSelector((state: RootState) => state.address);
+
   console.log('products', productDetail);
   console.log('product ID', productId);
   console.log('qunatity', quantity);
 
   useEffect(() => {
     getAllCartProducts();
+    // Fetch default address
+    getDefaultAddress(response => {
+      if (!response.success) {
+        console.log('Failed to load default address:', response.message);
+      }
+    });
   }, []);
+
+  // Refresh default address when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      getDefaultAddress(response => {
+        if (!response.success) {
+          console.log('Failed to refresh default address:', response.message);
+        }
+      });
+    }, []),
+  );
 
   const getAllCartProducts = () => {
     try {
@@ -116,11 +143,15 @@ const CheckoutOrders = (props: any) => {
                               color: dark ? COLORS.white : COLORS.greyscale900,
                             },
                           ]}>
-                          Home
+                          {defaultAddress?.label ||
+                            defaultAddress?.addressType ||
+                            'Home'}
                         </Text>
-                        <View style={styles.defaultView}>
-                          <Text style={styles.defaultTitle}>Default</Text>
-                        </View>
+                        {defaultAddress?.isDefault && (
+                          <View style={styles.defaultView}>
+                            <Text style={styles.defaultTitle}>Default</Text>
+                          </View>
+                        )}
                       </View>
                       <Text
                         style={[
@@ -131,7 +162,9 @@ const CheckoutOrders = (props: any) => {
                               : COLORS.grayscale700,
                           },
                         ]}>
-                        Time Square NYC, Nanhattan
+                        {defaultAddress
+                          ? `${defaultAddress.address}, ${defaultAddress.city}, ${defaultAddress.state} ${defaultAddress.postCode}`
+                          : 'No default address set'}
                       </Text>
                     </View>
                   </View>
@@ -499,9 +532,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist Medium',
     color: COLORS.grayscale700,
     marginVertical: 4,
+    width: '80%',
   },
   viewAddress: {
-    marginHorizontal: 16,
+    marginHorizontal: 0,
   },
   arrowRightIcon: {
     height: 16,

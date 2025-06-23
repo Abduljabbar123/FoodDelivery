@@ -6,7 +6,7 @@ import {
   Image,
   Switch,
 } from 'react-native';
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {ScrollView} from 'react-native-virtualized-view';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -24,6 +24,8 @@ import Button from '../components/Button';
 import {LOGOUT} from '../Redux/Reducers/Auth/actions';
 import {showSnackbar} from '../components/Snackbar';
 import {useAppSelector} from '../Helper/Hooks/reduxHooks';
+import {ENV} from '../config/env';
+import Loader from '../components/Loader';
 
 type Nav = {
   navigate: (value: string) => void;
@@ -33,7 +35,26 @@ const Profile = () => {
   const refRBSheet = useRef<any>(null);
   const {dark, colors, setScheme} = useTheme();
   const {navigate} = useNavigation<Nav>();
-  const {user} = useAppSelector(state => state.auth);
+  const {user, userLoading} = useAppSelector(state => state.auth);
+  const [image, setImage] = useState<any>(images.user1);
+  const [isDarkMode, setIsDarkMode] = useState(dark);
+
+  useEffect(() => {
+    if (user?.photo) {
+      setImage({
+        uri: ENV.resourceURL + user.photo,
+        name: user.photo ? user.photo.split('/').pop() : 'profile.jpg',
+        type: 'image/jpeg',
+      });
+    } else {
+      setImage(images.user1);
+    }
+  }, [user]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+    setScheme(isDarkMode ? 'light' : 'dark');
+  };
 
   const renderHeader = () => {
     return (
@@ -71,8 +92,6 @@ const Profile = () => {
   };
 
   const renderProfile = () => {
-    const [image, setImage] = useState(images.user1);
-
     // Image Profile handler
     const pickImage = () => {
       const options: ImageLibraryOptions = {
@@ -94,10 +113,18 @@ const Profile = () => {
       });
     };
 
+    if (userLoading) {
+      return <Loader size={50} mainStyles={{marginTop: 50}} />;
+    }
+
     return (
       <View style={styles.profileContainer}>
         <View>
-          <Image source={image} resizeMode="cover" style={styles.avatar} />
+          <Image
+            source={image === null ? images.logo3 : image}
+            resizeMode="cover"
+            style={styles.avatar}
+          />
           <TouchableOpacity onPress={pickImage} style={styles.picContainer}>
             <MaterialIcons name="edit" size={16} color={COLORS.white} />
           </TouchableOpacity>
@@ -107,27 +134,29 @@ const Profile = () => {
             styles.title,
             {color: dark ? COLORS.secondaryWhite : COLORS.greyscale900},
           ]}>
-          {user?.name}
+          {user?.name || 'User Name'}
         </Text>
         <Text
           style={[
             styles.subtitle,
             {color: dark ? COLORS.secondaryWhite : COLORS.greyscale900},
           ]}>
-          {user?.email}
+          {user?.email || 'user@example.com'}
         </Text>
+        {user?.nickname && (
+          <Text
+            style={[
+              styles.subtitle,
+              {color: dark ? COLORS.secondaryWhite : COLORS.greyscale900},
+            ]}>
+            {user.nickname}
+          </Text>
+        )}
       </View>
     );
   };
 
   const renderSettings = () => {
-    const [isDarkMode, setIsDarkMode] = useState(false);
-
-    const toggleDarkMode = () => {
-      setIsDarkMode(prev => !prev);
-      dark ? setScheme('light') : setScheme('dark');
-    };
-
     return (
       <View style={styles.settingsContainer}>
         <SettingsItem

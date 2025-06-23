@@ -1,321 +1,313 @@
+import React, {useState} from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Image,
-  TextInput,
-  StatusBar,
+  ScrollView,
+  Alert,
 } from 'react-native';
-import React, {useRef, useState} from 'react';
-import {COLORS, SIZES, icons, images, socials} from '../constants';
+import {COLORS, SIZES, icons} from '../constants';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTheme} from '../theme/ThemeProvider';
-import AutoSlider from '../components/AutoSlider';
-import {ScrollView} from 'react-native-virtualized-view';
-import RBSheet from 'react-native-raw-bottom-sheet';
-import SocialIcon from '../components/SocialIcon';
 import Button from '../components/Button';
-import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {
+  NavigationProp,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import {ENV} from '../config/env';
+import {useAppSelector} from '../Helper/Hooks/reduxHooks';
+import {
+  ADD_PRODUCT_TO_FAVORITES,
+  REMOVE_PRODUCT_FROM_FAVORITES,
+  GET_ALL_FAVORITES,
+} from '../Redux/Reducers/Favorites/action';
 import {ADD_TO_CART} from '../Redux/Reducers/FoodListing/action';
-import Loader from '../components/Loader';
+import AutoSlider from '../components/AutoSlider';
 
-const FoodDetailsAddItem = (props: any) => {
+interface RouteParams {
+  itemId: string;
+  productDetail: {
+    _id: string;
+    name: string;
+    image: string;
+    price: number;
+    description: string;
+  };
+}
+
+const FoodDetailsAddItem = () => {
   const navigation = useNavigation<NavigationProp<any>>();
-  const {colors, dark} = useTheme();
-  const refRBSheet = useRef<any>(null);
-  const productId = props?.route?.params?.itemId;
-  const productDetail = props?.route?.params?.productDetail;
-  const [count, setCount] = useState(1); // Initial count value
-  const [loading, setLoading] = useState(false);
+  const route = useRoute();
+  const {dark} = useTheme();
+  const {favorites} = useAppSelector(state => state.favorites);
+  const {itemId, productDetail} = route.params as RouteParams;
 
-  console.log('ADD TO CART PRODUCT ID ====> ', productId);
-  console.log(
-    'ADD TO CART PRODUCT DETAIL ====> ',
-    JSON.stringify(productDetail, null, 2),
-  );
+  // Extract food details from productDetail
+  const foodId = itemId || productDetail?._id || '';
+  const foodName = productDetail?.name || '';
+  const foodImage = productDetail?.image || '';
+  const foodPrice = productDetail?.price || 0;
+  const foodDescription = productDetail?.description || '';
 
-  // Slider images
-  const sliderImages = [
-    // images.vetDiet1,
-    productDetail?.image,
-    productDetail?.image,
-    productDetail?.image,
-    productDetail?.image,
-  ];
+  // Slider images - same as FoodDetails.tsx
+  const sliderImages: any = [foodImage, foodImage, foodImage, foodImage];
 
-  // render header
-  const renderHeader = () => {
-    const [isFavorite, setIsFavorite] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
-    return (
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Image
-            source={icons.back}
-            resizeMode="contain"
-            style={styles.backIcon}
-          />
-        </TouchableOpacity>
+  const isFavorite = favorites.some(fav => fav.food._id === foodId);
 
-        <View style={styles.iconContainer}>
-          <TouchableOpacity onPress={() => setIsFavorite(!isFavorite)}>
-            <Image
-              source={isFavorite ? icons.heart2 : icons.heart2Outline}
-              resizeMode="contain"
-              style={styles.bookmarkIcon}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.sendIconContainer}
-            onPress={() => refRBSheet.current.open()}>
-            <Image
-              source={icons.send2}
-              resizeMode="contain"
-              style={styles.sendIcon}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
-
-  // render content
-  const renderContent = () => {
-    const [expanded, setExpanded] = useState(false);
-
-    const toggleExpanded = () => {
-      setExpanded(!expanded);
-    };
-
-    const decreaseCount = () => {
-      if (count > 1) {
-        setCount(count - 1);
-      }
-    };
-
-    const increaseCount = () => {
-      setCount(count + 1);
-    };
-    return (
-      <View style={styles.contentContainer}>
-        <Text
-          style={[
-            styles.headerContentTitle,
-            {
-              color: dark ? COLORS.white : COLORS.greyscale900,
-            },
-          ]}>
-          {productDetail ? productDetail?.name : ''}
-        </Text>
-        <View
-          style={[
-            styles.separateLine,
-            {
-              marginVertical: 12,
-              backgroundColor: dark ? COLORS.grayscale700 : COLORS.grayscale200,
-            },
-          ]}
-        />
-        <Text
-          style={[
-            styles.description,
-            {
-              color: dark ? COLORS.grayscale400 : COLORS.grayscale700,
-            },
-          ]}
-          numberOfLines={expanded ? undefined : 4}>
-          {productDetail?.description ? productDetail?.description : ''}
-        </Text>
-        <TouchableOpacity onPress={toggleExpanded}>
-          <Text style={styles.viewBtn}>
-            {expanded ? 'View Less' : 'View More'}
-          </Text>
-        </TouchableOpacity>
-        <View style={styles.addItemContainer}>
-          <TouchableOpacity
-            style={[
-              styles.addItemBtn,
-              {
-                borderColor: dark ? COLORS.grayscale700 : COLORS.grayscale200,
-              },
-            ]}
-            onPress={decreaseCount}>
-            <Text style={styles.addItemBtnText}>-</Text>
-          </TouchableOpacity>
-          <Text style={styles.addItemText}>{count}</Text>
-          <TouchableOpacity
-            style={[
-              styles.addItemBtn,
-              {
-                borderColor: dark ? COLORS.grayscale700 : COLORS.grayscale200,
-              },
-            ]}
-            onPress={increaseCount}>
-            <Text style={styles.addItemBtnText}>+</Text>
-          </TouchableOpacity>
-        </View>
-
-        <TextInput
-          placeholder="Note to Store (optional)"
-          placeholderTextColor={COLORS.grayscale700}
-          style={[
-            styles.input,
-            {
-              backgroundColor: dark ? COLORS.dark2 : COLORS.tertiaryWhite,
-              borderColor: dark ? COLORS.grayscale700 : COLORS.grayscale200,
-            },
-          ]}
-          multiline={true}
-        />
-      </View>
-    );
-  };
-
-  const addToCart = () => {
-    let data = {
-      foodId: productId,
-      quantity: count,
-    };
-    console.log('ADD TO CART DATA ====> ', JSON.stringify(data, null, 2));
-
-    setLoading(true);
-    try {
-      ADD_TO_CART(data, (res: any) => {
-        if (res.success) {
-          setLoading(false);
-          navigation.navigate('checkoutorders', {
-            productId: productId,
-            productDetail: productDetail,
-            quantity: count,
-          });
-        } else {
-          console.log('error =======>', res?.message);
-        }
-      });
-    } catch (error) {
-    } finally {
-      setLoading(false);
+  const handleFavoritePress = () => {
+    if (isFavorite) {
+      REMOVE_PRODUCT_FROM_FAVORITES(foodId, () => {});
+    } else {
+      ADD_PRODUCT_TO_FAVORITES(foodId, () => {});
     }
   };
 
+  const handleQuantityChange = (increment: boolean) => {
+    if (increment) {
+      setQuantity(prev => prev + 1);
+    } else if (quantity > 1) {
+      setQuantity(prev => prev - 1);
+    }
+  };
+
+  const handleAddToCart = () => {
+    const cartData = {
+      foodId: foodId,
+      quantity: quantity,
+      // Add size and crust if needed
+    };
+
+    ADD_TO_CART(cartData, response => {
+      if (response.success) {
+        Alert.alert('Success', 'Item added to cart successfully!', [
+          {
+            text: 'Continue Shopping',
+            onPress: () => navigation.navigate('home'),
+          },
+          {
+            text: 'View Cart',
+            onPress: () => navigation.navigate('checkoutorders'),
+          },
+        ]);
+      } else {
+        Alert.alert('Error', response.message || 'Failed to add item to cart');
+      }
+    });
+  };
+
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Image
+          source={icons.back}
+          resizeMode="contain"
+          style={[
+            styles.backIcon,
+            {tintColor: dark ? COLORS.white : COLORS.greyscale900},
+          ]}
+        />
+      </TouchableOpacity>
+      <Text
+        style={[
+          styles.headerTitle,
+          {color: dark ? COLORS.white : COLORS.greyscale900},
+        ]}>
+        Food Details
+      </Text>
+      <TouchableOpacity onPress={handleFavoritePress}>
+        <Image
+          source={isFavorite ? icons.heart2 : icons.heart2Outline}
+          resizeMode="contain"
+          style={[
+            styles.heartIcon,
+            {tintColor: isFavorite ? COLORS.red : COLORS.grayscale400},
+          ]}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderFoodInfo = () => (
+    <View style={styles.foodInfoContainer}>
+      <Text
+        style={[
+          styles.foodName,
+          {color: dark ? COLORS.white : COLORS.greyscale900},
+        ]}>
+        {foodName}
+      </Text>
+      <Text
+        style={[
+          styles.foodDescription,
+          {color: dark ? COLORS.greyscale300 : COLORS.grayscale700},
+        ]}>
+        {foodDescription}
+      </Text>
+      <View style={styles.ratingContainer}>
+        <FontAwesome name="star" size={16} color="rgb(250, 159, 28)" />
+        <Text
+          style={[
+            styles.ratingText,
+            {color: dark ? COLORS.greyscale300 : COLORS.grayscale700},
+          ]}>
+          4.5 (120 reviews)
+        </Text>
+      </View>
+    </View>
+  );
+
+  const renderSizeOptions = () => (
+    <View style={styles.optionsContainer}>
+      <Text
+        style={[
+          styles.optionsTitle,
+          {color: dark ? COLORS.white : COLORS.greyscale900},
+        ]}>
+        Size
+      </Text>
+      <View style={styles.optionsRow}>
+        {['Small', 'Medium', 'Large'].map(size => (
+          <TouchableOpacity
+            key={size}
+            style={[
+              styles.optionButton,
+              selectedSize === size && styles.selectedOption,
+            ]}
+            onPress={() => setSelectedSize(size)}>
+            <Text
+              style={[
+                styles.optionText,
+                selectedSize === size && styles.selectedOptionText,
+              ]}>
+              {size}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  const renderCrustOptions = () => (
+    <View style={styles.optionsContainer}>
+      <Text
+        style={[
+          styles.optionsTitle,
+          {color: dark ? COLORS.white : COLORS.greyscale900},
+        ]}>
+        Crust
+      </Text>
+      <View style={styles.optionsRow}>
+        {['Thin Crust', 'Thick Crust', 'Stuffed Crust'].map(crust => (
+          <TouchableOpacity
+            key={crust}
+            style={[
+              styles.optionButton,
+              selectedCrust === crust && styles.selectedOption,
+            ]}
+            onPress={() => setSelectedCrust(crust)}>
+            <Text
+              style={[
+                styles.optionText,
+                selectedCrust === crust && styles.selectedOptionText,
+              ]}>
+              {crust}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  const renderQuantitySelector = () => (
+    <View style={styles.quantityContainer}>
+      <Text
+        style={[
+          styles.quantityTitle,
+          {color: dark ? COLORS.white : COLORS.greyscale900},
+        ]}>
+        Quantity
+      </Text>
+      <View style={styles.quantitySelector}>
+        <TouchableOpacity
+          style={styles.quantityButton}
+          onPress={() => handleQuantityChange(false)}>
+          <Text style={styles.quantityButtonText}>-</Text>
+        </TouchableOpacity>
+        <Text
+          style={[
+            styles.quantityText,
+            {color: dark ? COLORS.white : COLORS.greyscale900},
+          ]}>
+          {quantity}
+        </Text>
+        <TouchableOpacity
+          style={styles.quantityButton}
+          onPress={() => handleQuantityChange(true)}>
+          <Text style={styles.quantityButtonText}>+</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderPriceSection = () => (
+    <View style={styles.priceSection}>
+      <View style={styles.priceContainer}>
+        <Text
+          style={[
+            styles.priceLabel,
+            {color: dark ? COLORS.white : COLORS.greyscale900},
+          ]}>
+          Total Price:
+        </Text>
+        <Text style={styles.priceValue}>
+          ${(foodPrice * quantity).toFixed(2)}
+        </Text>
+      </View>
+      <Button
+        title="Add to Cart"
+        filled
+        onPress={handleAddToCart}
+        style={styles.addToCartButton}
+      />
+    </View>
+  );
+
   return (
-    <View style={[styles.area, {backgroundColor: colors.background}]}>
-      <StatusBar hidden />
+    <SafeAreaView
+      style={[
+        styles.container,
+        {backgroundColor: dark ? COLORS.dark1 : COLORS.white},
+      ]}>
       <AutoSlider images={sliderImages} />
       {renderHeader()}
       <ScrollView showsVerticalScrollIndicator={false}>
-        {renderContent()}
+        {renderFoodInfo()}
+        {/* {renderSizeOptions()}
+        {renderCrustOptions()} */}
+        {renderQuantitySelector()}
       </ScrollView>
-      {loading ? (
-        <Loader />
-      ) : (
-        <Button
-          title="Add To Basket"
-          filled
-          style={styles.btn}
-          onPress={() => addToCart()}
-        />
-      )}
-      <RBSheet
-        ref={refRBSheet}
-        closeOnPressMask={true}
-        height={360}
-        customStyles={{
-          wrapper: {
-            backgroundColor: 'rgba(0,0,0,0.5)',
-          },
-          draggableIcon: {
-            backgroundColor: dark ? COLORS.dark3 : COLORS.grayscale200,
-          },
-          container: {
-            borderTopRightRadius: 32,
-            borderTopLeftRadius: 32,
-            height: 360,
-            backgroundColor: dark ? COLORS.dark2 : COLORS.white,
-            alignItems: 'center',
-          },
-        }}>
-        <Text
-          style={[
-            styles.bottomTitle,
-            {
-              color: dark ? COLORS.white : COLORS.greyscale900,
-            },
-          ]}>
-          Share
-        </Text>
-        <View
-          style={[
-            styles.separateLine,
-            {
-              backgroundColor: dark ? COLORS.grayscale700 : COLORS.grayscale200,
-              marginVertical: 12,
-            },
-          ]}
-        />
-        <View style={styles.socialContainer}>
-          <SocialIcon
-            icon={socials.whatsapp}
-            name="WhatsApp"
-            onPress={() => refRBSheet.current.close()}
-          />
-          <SocialIcon
-            icon={socials.twitter}
-            name="X"
-            onPress={() => refRBSheet.current.close()}
-          />
-          <SocialIcon
-            icon={socials.facebook}
-            name="Facebook"
-            onPress={() => refRBSheet.current.close()}
-          />
-          <SocialIcon
-            icon={socials.instagram}
-            name="Instagram"
-            onPress={() => refRBSheet.current.close()}
-          />
-        </View>
-        <View style={styles.socialContainer}>
-          <SocialIcon
-            icon={socials.yahoo}
-            name="Yahoo"
-            onPress={() => refRBSheet.current.close()}
-          />
-          <SocialIcon
-            icon={socials.titktok}
-            name="Tiktok"
-            onPress={() => refRBSheet.current.close()}
-          />
-          <SocialIcon
-            icon={socials.messenger}
-            name="Chat"
-            onPress={() => refRBSheet.current.close()}
-          />
-          <SocialIcon
-            icon={socials.wechat}
-            name="Wechat"
-            onPress={() => refRBSheet.current.close()}
-          />
-        </View>
-      </RBSheet>
-    </View>
+      {renderPriceSection()}
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  area: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
   container: {
     flex: 1,
     backgroundColor: COLORS.white,
     padding: 16,
   },
   headerContainer: {
-    width: SIZES.width - 32,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
     position: 'absolute',
     top: 32,
     zIndex: 999,
@@ -325,112 +317,144 @@ const styles = StyleSheet.create({
   backIcon: {
     width: 24,
     height: 24,
-    tintColor: COLORS.black,
   },
-  bookmarkIcon: {
+  heartIcon: {
     width: 24,
     height: 24,
-    tintColor: COLORS.black,
   },
-  sendIcon: {
-    width: 24,
-    height: 24,
-    tintColor: COLORS.black,
-  },
-  sendIconContainer: {
-    marginLeft: 8,
-  },
-  iconContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  contentContainer: {
-    marginHorizontal: 12,
-  },
-  separateLine: {
-    width: SIZES.width - 32,
-    height: 1,
-    backgroundColor: COLORS.grayscale200,
-  },
-  bottomTitle: {
-    fontSize: 24,
-    fontFamily: 'Urbanist SemiBold',
+  headerTitle: {
+    fontSize: 20,
+    fontFamily: 'Urbanist Bold',
     color: COLORS.black,
-    textAlign: 'center',
-    marginTop: 12,
   },
-  socialContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginVertical: 12,
+  imageContainer: {
     width: SIZES.width - 32,
+    height: SIZES.height / 3,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
   },
-  headerContentTitle: {
+  foodImage: {
+    width: '100%',
+    height: '100%',
+  },
+  foodInfoContainer: {
+    marginBottom: 16,
+  },
+  foodName: {
     fontSize: 28,
     fontFamily: 'Urbanist Bold',
     color: COLORS.black,
-    marginTop: 12,
+    marginBottom: 8,
   },
-  description: {
+  foodDescription: {
     fontSize: 14,
     color: COLORS.grayscale700,
     fontFamily: 'Urbanist Regular',
   },
-  viewBtn: {
-    color: COLORS.primary,
-    marginTop: 5,
-    fontSize: 14,
-    fontFamily: 'Urbanist SemiBold',
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
   },
-  subItemContainer: {
-    width: SIZES.width - 32,
+  ratingText: {
+    fontSize: 14,
+    color: COLORS.grayscale700,
+    fontFamily: 'Urbanist Regular',
+    marginLeft: 8,
+  },
+  optionsContainer: {
+    marginBottom: 16,
+  },
+  optionsTitle: {
+    fontSize: 24,
+    fontFamily: 'Urbanist SemiBold',
+    color: COLORS.black,
+    marginBottom: 8,
+  },
+  optionsRow: {
+    flexDirection: 'row',
+  },
+  optionButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.grayscale200,
+    marginRight: 12,
+  },
+  selectedOption: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary,
+  },
+  optionText: {
+    fontSize: 14,
+    color: COLORS.grayscale700,
+    fontFamily: 'Urbanist Regular',
+  },
+  selectedOptionText: {
+    color: COLORS.white,
+  },
+  quantityContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
   },
-  addItemContainer: {
+  quantityTitle: {
+    fontSize: 24,
+    fontFamily: 'Urbanist SemiBold',
+    color: COLORS.black,
+  },
+  quantitySelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 22,
-  },
-  addItemBtn: {
-    height: 52,
-    width: 52,
+    borderWidth: 1,
+    borderColor: COLORS.grayscale200,
     borderRadius: 8,
+  },
+  quantityButton: {
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    borderColor: COLORS.grayscale200,
-    borderWidth: 1,
   },
-  addItemBtnText: {
+  quantityButtonText: {
     fontSize: 24,
     color: COLORS.primary,
     fontFamily: 'Urbanist Medium',
   },
-  addItemText: {
+  quantityText: {
     fontSize: 20,
     color: COLORS.greyscale900,
     fontFamily: 'Urbanist SemiBold',
     marginHorizontal: 22,
   },
-  input: {
-    width: SIZES.width - 32,
-    height: 72,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.grayscale200,
-    paddingHorizontal: 10,
-    fontSize: 14,
-    fontFamily: 'Urbanist Regular',
-    color: COLORS.grayscale700,
-    marginVertical: 12,
-    backgroundColor: COLORS.tertiaryWhite,
+  priceSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
   },
-  btn: {
-    width: SIZES.width - 32,
-    marginHorizontal: 16,
-    marginBottom: 24,
+  priceContainer: {
+    flexDirection: 'column',
+  },
+  priceLabel: {
+    fontSize: 16,
+    color: COLORS.grayscale700,
+    fontFamily: 'Urbanist Regular',
+    marginBottom: 4,
+  },
+  priceValue: {
+    fontSize: 24,
+    color: COLORS.primary,
+    fontFamily: 'Urbanist Bold',
+  },
+  addToCartButton: {
+    width: '60%',
   },
 });
 

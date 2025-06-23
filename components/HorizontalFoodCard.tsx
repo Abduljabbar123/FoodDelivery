@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -20,8 +20,11 @@ interface HorizontalFoodCardProps {
   fee: string;
   rating: number;
   numReviews: string;
+  foodId: string;
+  isFavorite?: boolean;
   isPromo?: boolean;
   onPress: () => void;
+  onPressFavorite: () => void;
 }
 
 const HorizontalFoodCard: React.FC<HorizontalFoodCardProps> = ({
@@ -32,10 +35,12 @@ const HorizontalFoodCard: React.FC<HorizontalFoodCardProps> = ({
   fee,
   rating,
   numReviews,
+  foodId,
+  isFavorite,
   isPromo = false,
   onPress,
+  onPressFavorite,
 }) => {
-  const [isFavourite, setIsFavourite] = useState(false);
   const {dark} = useTheme();
 
   return (
@@ -95,11 +100,14 @@ const HorizontalFoodCard: React.FC<HorizontalFoodCardProps> = ({
             />
             <Text style={styles.location}>{fee ? fee : '$ 120'}</Text>
           </View>
-          <TouchableOpacity onPress={() => setIsFavourite(!isFavourite)}>
+          <TouchableOpacity onPress={onPressFavorite}>
             <Image
-              source={isFavourite ? icons.heart2 : icons.heart2Outline}
+              source={isFavorite ? icons.heart2 : icons.heart2Outline}
               resizeMode="contain"
-              style={styles.heartIcon}
+              style={[
+                styles.heartIcon,
+                {tintColor: isFavorite ? COLORS.red : COLORS.grayscale400},
+              ]}
             />
           </TouchableOpacity>
         </View>
@@ -142,15 +150,26 @@ const styles = StyleSheet.create({
     color: COLORS.grayscale700,
     marginVertical: 4,
   },
-  priceContainer: {
+  bottomViewContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  viewContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginVertical: 4,
   },
-  heartIcon: {
-    width: 16,
-    height: 16,
-    tintColor: COLORS.red,
-    marginLeft: 6,
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  price: {
+    fontSize: 16,
+    fontFamily: 'Urbanist SemiBold',
+    color: COLORS.primary,
+    marginRight: 8,
   },
   reviewContainer: {
     position: 'absolute',
@@ -177,28 +196,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: SIZES.width - 164,
   },
-  bottomViewContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  viewContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  price: {
-    fontSize: 16,
-    fontFamily: 'Urbanist SemiBold',
-    color: COLORS.primary,
-    marginRight: 8,
-  },
   motoIcon: {
     height: 18,
     width: 18,
     tintColor: COLORS.primary,
     marginRight: 4,
+  },
+  heartIcon: {
+    height: 24,
+    width: 24,
+    tintColor: COLORS.primary,
+    marginLeft: 8,
   },
 });
 

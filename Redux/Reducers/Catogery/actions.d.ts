@@ -10,6 +10,10 @@ interface FCatogerylListing {
   name: string;
   description: string;
   image: string;
+  // API response properties
+  categories?: any[];
+  success?: boolean;
+  message?: string;
 }
 
 interface Tloading {

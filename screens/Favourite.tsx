@@ -1,16 +1,31 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, FlatList } from 'react-native';
-import React, { useEffect, useRef, useState } from 'react';
-import { COLORS, SIZES, icons } from '../constants';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView } from 'react-native-virtualized-view';
-import { categories, myFavouriteProducts } from '../data';
-import RBSheet from "react-native-raw-bottom-sheet";
-import { useTheme } from '../theme/ThemeProvider';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  FlatList,
+  ImageSourcePropType,
+} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {COLORS, SIZES, icons} from '../constants';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {ScrollView} from 'react-native-virtualized-view';
+import {categories} from '../data';
+import RBSheet from 'react-native-raw-bottom-sheet';
+import {useTheme} from '../theme/ThemeProvider';
 import Button from '../components/Button';
-import { NavigationProp, useNavigation } from '@react-navigation/native';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
 import VerticalFoodCardFavourite from '../components/VerticalFoodCardFavourite';
 import HorizontalFoodCardFavourite from '../components/HorizontalFoodCardFavourite';
 import NotFoundCard from '../components/NotFound';
+import {useAppSelector} from '../Helper/Hooks/reduxHooks';
+import {FavoriteProduct} from '../Redux/Reducers/Favorites/actions.d';
+import {
+  GET_ALL_FAVORITES,
+  REMOVE_PRODUCT_FROM_FAVORITES,
+} from '../Redux/Reducers/Favorites/action';
+import {ENV} from '../config/env';
 
 interface Category {
   id: string;
@@ -20,7 +35,7 @@ interface Category {
 interface Food {
   id: string;
   name: string;
-  image: any;
+  image: ImageSourcePropType;
   distance: string;
   price: string;
   fee: string;
@@ -32,21 +47,46 @@ interface Food {
 const Favourite = () => {
   const navigation = useNavigation<NavigationProp<any>>();
   const refRBSheet = useRef<any>(null);
-  const { dark, colors } = useTheme();
-  const [selectedBookmarkItem, setSelectedBookmarkItem] = useState<Food | null>(null);
-  const [myBookmarkFoods, setMyBookmarkFoods] = useState<Food[]>(myFavouriteProducts || []);
+  const {dark, colors} = useTheme();
+  const {favorites, loading} = useAppSelector(state => state.favorites);
+  const [selectedBookmarkItem, setSelectedBookmarkItem] =
+    useState<FavoriteProduct | null>(null);
   const [resultsCount, setResultsCount] = useState<number>(0);
   const [selectedTab, setSelectedTab] = useState<string>('row');
 
   const handleRemoveBookmark = () => {
     if (selectedBookmarkItem) {
-      const updatedBookmarkFoods = myBookmarkFoods.filter(
-        (food) => food.id !== selectedBookmarkItem.id
-      );
-      setMyBookmarkFoods(updatedBookmarkFoods);
-      refRBSheet.current.close();
+      REMOVE_PRODUCT_FROM_FAVORITES(selectedBookmarkItem.food, response => {
+        if (response.success) {
+          refRBSheet.current.close();
+        }
+      });
     }
   };
+
+  useEffect(() => {
+    GET_ALL_FAVORITES((res: any) => {});
+  }, []);
+
+  // Handle empty state
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <Text
+        style={[
+          styles.emptyText,
+          {color: dark ? COLORS.white : COLORS.greyscale900},
+        ]}>
+        No favorites yet
+      </Text>
+      <Text
+        style={[
+          styles.emptySubText,
+          {color: dark ? COLORS.grayscale200 : COLORS.grayscale700},
+        ]}>
+        Add some items to your favorites to see them here
+      </Text>
+    </View>
+  );
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
@@ -54,43 +94,64 @@ const Favourite = () => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Image
             source={icons.back}
-            resizeMode='contain'
-            style={[styles.backIcon, {
-              tintColor: dark ? COLORS.white : COLORS.greyscale900
-            }]}
+            resizeMode="contain"
+            style={[
+              styles.backIcon,
+              {
+                tintColor: dark ? COLORS.white : COLORS.greyscale900,
+              },
+            ]}
           />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, {
-          color: dark ? COLORS.white : COLORS.greyscale900
-        }]}>
+        <Text
+          style={[
+            styles.headerTitle,
+            {
+              color: dark ? COLORS.white : COLORS.greyscale900,
+            },
+          ]}>
           Favourite
         </Text>
       </View>
       <TouchableOpacity>
         <Image
           source={icons.moreCircle}
-          resizeMode='contain'
-          style={[styles.moreIcon, {
-            tintColor: dark ? COLORS.white : COLORS.greyscale900
-          }]}
+          resizeMode="contain"
+          style={[
+            styles.moreIcon,
+            {
+              tintColor: dark ? COLORS.white : COLORS.greyscale900,
+            },
+          ]}
         />
       </TouchableOpacity>
     </View>
   );
 
   const renderMyBookmarkEvents = () => {
-    const [selectedCategories, setSelectedCategories] = useState<string[]>(["1"]);
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([
+      '1',
+    ]);
 
-    const filteredFoods = myBookmarkFoods.filter(food => selectedCategories.includes("1") || selectedCategories.includes(food.categoryId));
+    const filteredFavorites = favorites.filter(favorite => {
+      const foodDetails = favorite.foodDetails as any;
+      const categoryId = foodDetails?.category?._id || '1';
+      return (
+        selectedCategories.includes('1') ||
+        selectedCategories.includes(categoryId)
+      );
+    });
 
     useEffect(() => {
-      setResultsCount(filteredFoods.length);
-    }, [myBookmarkFoods, selectedCategories]);
+      setResultsCount(filteredFavorites.length);
+    }, [favorites, selectedCategories]);
 
-    const renderCategoryItem = ({ item }: { item: Category }) => (
+    const renderCategoryItem = ({item}: {item: Category}) => (
       <TouchableOpacity
         style={{
-          backgroundColor: selectedCategories.includes(item.id) ? COLORS.primary : "transparent",
+          backgroundColor: selectedCategories.includes(item.id)
+            ? COLORS.primary
+            : 'transparent',
           padding: 10,
           marginVertical: 5,
           borderColor: COLORS.primary,
@@ -98,11 +159,15 @@ const Favourite = () => {
           borderRadius: 24,
           marginRight: 12,
         }}
-        onPress={() => toggleCategory(item.id)}
-      >
-        <Text style={{
-          color: selectedCategories.includes(item.id) ? COLORS.white : COLORS.primary
-        }}>{item.name}</Text>
+        onPress={() => toggleCategory(item.id)}>
+        <Text
+          style={{
+            color: selectedCategories.includes(item.id)
+              ? COLORS.white
+              : COLORS.primary,
+          }}>
+          {item.name}
+        </Text>
       </TouchableOpacity>
     );
 
@@ -119,6 +184,11 @@ const Favourite = () => {
       setSelectedCategories(updatedCategories);
     };
 
+    // Handle empty state
+    if (favorites.length === 0) {
+      return renderEmptyState();
+    }
+
     return (
       <View>
         <View style={styles.categoryContainer}>
@@ -132,147 +202,169 @@ const Favourite = () => {
         </View>
 
         <View style={styles.reusltTabContainer}>
-          <Text style={[styles.tabText, {
-            color: dark ? COLORS.secondaryWhite : COLORS.black
-          }]}>{resultsCount} found</Text>
+          <Text
+            style={[
+              styles.tabText,
+              {
+                color: dark ? COLORS.secondaryWhite : COLORS.black,
+              },
+            ]}>
+            {resultsCount} found
+          </Text>
           <View style={styles.viewDashboard}>
             <TouchableOpacity onPress={() => setSelectedTab('column')}>
               <Image
-                source={selectedTab === 'column' ? icons.document2 : icons.document2Outline}
-                resizeMode='contain'
-                style={styles.dashboardIcon}
+                source={
+                  selectedTab === 'column'
+                    ? icons.dashboard
+                    : icons.dashboardOutline
+                }
+                resizeMode="contain"
+                style={[
+                  styles.dashboardIcon,
+                  {
+                    tintColor:
+                      selectedTab === 'column'
+                        ? COLORS.primary
+                        : dark
+                        ? COLORS.white
+                        : COLORS.black,
+                  },
+                ]}
               />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setSelectedTab('row')}>
               <Image
-                source={selectedTab === 'row' ? icons.dashboard : icons.dashboardOutline}
-                resizeMode='contain'
-                style={styles.dashboardIcon}
+                source={
+                  selectedTab === 'row'
+                    ? icons.dashboard2
+                    : icons.dashboard2Outline
+                }
+                resizeMode="contain"
+                style={[
+                  styles.dashboardIcon,
+                  {
+                    tintColor:
+                      selectedTab === 'row'
+                        ? COLORS.primary
+                        : dark
+                        ? COLORS.white
+                        : COLORS.black,
+                  },
+                ]}
               />
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={{
-          backgroundColor: dark ? COLORS.dark1 : COLORS.secondaryWhite,
-          marginVertical: 16
-        }}>
-          {resultsCount > 0 ? (
-            <>
-              {selectedTab === 'row' ? (
-                <FlatList
-                  data={filteredFoods}
-                  keyExtractor={(item) => item.id}
-                  numColumns={2}
-                  columnWrapperStyle={{ gap: 16 }}
-                  renderItem={({ item }) => (
-                    <VerticalFoodCardFavourite
-                      name={item.name}
-                      image={item.image}
-                      distance={item.distance}
-                      price={item.price}
-                      fee={item.fee}
-                      rating={item.rating}
-                      numReviews={item.numReviews}
-                      onPress={() => {
-                        setSelectedBookmarkItem(item);
-                        refRBSheet.current.open();
-                      }}
-                    />
-                  )}
+        {filteredFavorites.length === 0 ? (
+          <NotFoundCard />
+        ) : (
+          <FlatList
+            data={filteredFavorites}
+            keyExtractor={item => item._id}
+            showsVerticalScrollIndicator={false}
+            renderItem={({item}) => {
+              const foodDetails = item.food as any;
+              if (!foodDetails) {
+                return null;
+              }
+              return selectedTab === 'row' ? (
+                <HorizontalFoodCardFavourite
+                  name={foodDetails?.name || 'Unknown Food'}
+                  image={
+                    foodDetails?.image
+                      ? {uri: ENV.resourceURL + foodDetails.image}
+                      : require('../assets/images/products/dry_food1.jpg')
+                  }
+                  distance={foodDetails?.distance || 'N/A'}
+                  price={`$${foodDetails?.price || 0}`}
+                  fee={foodDetails?.fee || '$0.00'}
+                  rating={foodDetails?.rating || 0}
+                  numReviews={foodDetails?.numReviews?.toString() || '0'}
+                  onPress={() => {
+                    navigation.navigate('foodDetails', {foodId: item.food});
+                  }}
+                  onFavoritePress={() => {
+                    REMOVE_PRODUCT_FROM_FAVORITES(item._id, () => {});
+                  }}
                 />
               ) : (
-                <FlatList
-                  data={filteredFoods}
-                  keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
-                    <HorizontalFoodCardFavourite
-                      name={item.name}
-                      image={item.image}
-                      distance={item.distance}
-                      price={item.price}
-                      fee={item.fee}
-                      rating={item.rating}
-                      numReviews={item.numReviews}
-                      onPress={() => {
-                        setSelectedBookmarkItem(item);
-                        refRBSheet.current.open();
-                      }}
-                    />
-                  )}
+                <VerticalFoodCardFavourite
+                  name={foodDetails?.name || 'Unknown Food'}
+                  image={
+                    foodDetails?.image
+                      ? {uri: ENV.resourceURL + foodDetails.image}
+                      : require('../assets/images/products/dry_food1.jpg')
+                  }
+                  distance={foodDetails?.distance || 'N/A'}
+                  price={`$${foodDetails?.price || 0}`}
+                  fee={foodDetails?.fee || '$0.00'}
+                  rating={foodDetails?.rating || 0}
+                  numReviews={foodDetails?.numReviews?.toString() || '0'}
+                  onPress={() => {
+                    navigation.navigate('foodDetails', {foodId: item.food});
+                  }}
+                  onFavoritePress={() => {
+                    REMOVE_PRODUCT_FROM_FAVORITES(item.food, () => {});
+                  }}
                 />
-              )}
-            </>
-          ) : (
-            <NotFoundCard />
-          )}
-        </View>
+              );
+            }}
+          />
+        )}
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={[styles.area, { backgroundColor: colors.background }]}>
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        {renderHeader()}
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {renderMyBookmarkEvents()}
-        </ScrollView>
-      </View>
+    <SafeAreaView
+      style={[
+        styles.container,
+        {backgroundColor: dark ? COLORS.dark1 : COLORS.white},
+      ]}>
+      {renderHeader()}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
+        {renderMyBookmarkEvents()}
+      </ScrollView>
+
       <RBSheet
         ref={refRBSheet}
-        closeOnPressMask={true}
-        height={340}
+        closeOnPressMask={false}
         customStyles={{
-          wrapper: { backgroundColor: "rgba(0,0,0,0.5)" },
-          draggableIcon: { backgroundColor: dark ? COLORS.greyscale300 : COLORS.greyscale300 },
+          wrapper: {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          },
+          draggableIcon: {
+            backgroundColor: '#000',
+          },
           container: {
-            borderTopRightRadius: 32,
-            borderTopLeftRadius: 32,
-            height: 340,
-            backgroundColor: dark ? COLORS.dark2 : COLORS.white,
-            alignItems: "center",
-            width: "100%",
-            paddingVertical: 12
-          }
-        }}
-      >
-        <Text style={[styles.bottomSubtitle, { color: dark ? COLORS.white : COLORS.black }]}>
-          Remove from Bookmark?
-        </Text>
-        <View style={styles.separateLine} />
-        <View style={[styles.selectedBookmarkContainer, { backgroundColor: dark ? COLORS.dark2 : COLORS.tertiaryWhite }]}>
-          {selectedBookmarkItem && (
-            <HorizontalFoodCardFavourite
-              name={selectedBookmarkItem.name}
-              image={selectedBookmarkItem.image}
-              distance={selectedBookmarkItem.distance}
-              price={selectedBookmarkItem.price}
-              fee={selectedBookmarkItem.fee}
-              rating={selectedBookmarkItem.rating}
-              numReviews={selectedBookmarkItem.numReviews}
-              onPress={() => navigation.navigate("fooddetails")}
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            padding: 20,
+          },
+        }}>
+        <View style={styles.bottomSheetContent}>
+          <Text style={styles.bottomSheetTitle}>Remove from Favorites</Text>
+          <Text style={styles.bottomSheetSubtitle}>
+            Are you sure you want to remove this item from your favorites?
+          </Text>
+          <View style={styles.bottomSheetButtons}>
+            <Button
+              title="Cancel"
+              onPress={() => refRBSheet.current.close()}
+              style={styles.cancelButton}
+              textColor={styles.cancelButtonText.color}
             />
-          )}
-        </View>
-        <View style={styles.bottomContainer}>
-          <Button
-            title="Cancel"
-            style={{
-              width: (SIZES.width - 32) / 2 - 8,
-              backgroundColor: dark ? COLORS.dark3 : COLORS.tansparentPrimary,
-              borderRadius: 32,
-              borderColor: dark ? COLORS.dark3 : COLORS.tansparentPrimary
-            }}
-            textColor={dark ? COLORS.white : COLORS.primary}
-            onPress={() => refRBSheet.current.close()}
-          />
-          <Button
-            title="Yes, Remove"
-            filled
-            style={styles.removeButton}
-            onPress={handleRemoveBookmark}
-          />
+            <Button
+              title="Remove"
+              onPress={handleRemoveBookmark}
+              filled
+              style={styles.removeButton}
+            />
+          </View>
         </View>
       </RBSheet>
     </SafeAreaView>
@@ -280,181 +372,121 @@ const Favourite = () => {
 };
 
 const styles = StyleSheet.create({
-  area: {
-    flex: 1,
-    backgroundColor: COLORS.white
-  },
   container: {
     flex: 1,
     backgroundColor: COLORS.white,
-    padding: 16
   },
   headerContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     width: SIZES.width - 32,
-    justifyContent: "space-between",
-    marginBottom: 16
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   headerLeft: {
-    flexDirection: "row",
-    alignItems: "center"
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   backIcon: {
     height: 24,
     width: 24,
-    tintColor: COLORS.black
+    tintColor: COLORS.black,
   },
   headerTitle: {
     fontSize: 20,
-    fontFamily: "Urbanist Bold",
+    fontFamily: 'Urbanist Bold',
     color: COLORS.black,
-    marginLeft: 16
+    marginLeft: 16,
   },
   moreIcon: {
     width: 24,
     height: 24,
-    tintColor: COLORS.black
+    tintColor: COLORS.black,
   },
   categoryContainer: {
-    marginTop: 0
-  },
-  bottomContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginVertical: 12,
-    paddingHorizontal: 16,
-    width: "100%"
-  },
-  cancelButton: {
-    width: (SIZES.width - 32) / 2 - 8,
-    backgroundColor: COLORS.tansparentPrimary,
-    borderRadius: 32
-  },
-  removeButton: {
-    width: (SIZES.width - 32) / 2 - 8,
-    backgroundColor: COLORS.primary,
-    borderRadius: 32
-  },
-  bottomTitle: {
-    fontSize: 24,
-    fontFamily: "Urbanist SemiBold",
-    color: "red",
-    textAlign: "center",
-  },
-  bottomSubtitle: {
-    fontSize: 22,
-    fontFamily: "Urbanist Bold",
-    color: COLORS.greyscale900,
-    textAlign: "center",
-    marginVertical: 12
-  },
-  selectedBookmarkContainer: {
-    marginVertical: 16,
-    backgroundColor: COLORS.tertiaryWhite
-  },
-  separateLine: {
-    width: "100%",
-    height: .2,
-    backgroundColor: COLORS.greyscale300,
-    marginHorizontal: 16
-  },
-  filterIcon: {
-    width: 24,
-    height: 24,
-    tintColor: COLORS.primary
-  },
-  tabContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: SIZES.width - 32,
-    justifyContent: "space-between"
-  },
-  tabBtn: {
-    width: (SIZES.width - 32) / 2 - 6,
-    height: 42,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1.4,
-    borderColor: COLORS.primary
-  },
-  selectedTab: {
-    width: (SIZES.width - 32) / 2 - 6,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1.4,
-    borderColor: COLORS.primary,
-  },
-  tabBtnText: {
-    fontSize: 16,
-    fontFamily: "Urbanist SemiBold",
-    color: COLORS.primary,
-    textAlign: "center"
-  },
-  selectedTabText: {
-    fontSize: 16,
-    fontFamily: "Urbanist SemiBold",
-    color: COLORS.white,
-    textAlign: "center"
-  },
-  resultContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: SIZES.width - 32,
-    marginVertical: 16,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontFamily: "Urbanist Bold",
-    color: COLORS.black,
-  },
-  subResult: {
-    fontSize: 14,
-    fontFamily: "Urbanist SemiBold",
-    color: COLORS.primary
-  },
-  resultLeftView: {
-    flexDirection: "row"
-  },
-  logoutButton: {
-    width: (SIZES.width - 32) / 2 - 8,
-    backgroundColor: COLORS.primary,
-    borderRadius: 32
-  },
-  sheetTitle: {
-    fontSize: 18,
-    fontFamily: "Urbanist SemiBold",
-    color: COLORS.black,
-    marginVertical: 12
+    marginTop: 0,
   },
   reusltTabContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     width: SIZES.width - 32,
-    justifyContent: "space-between",
-    marginTop: 12
+    justifyContent: 'space-between',
+    marginTop: 12,
   },
   viewDashboard: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     width: 36,
-    justifyContent: "space-between"
+    justifyContent: 'space-between',
   },
   dashboardIcon: {
     width: 16,
     height: 16,
-    tintColor: COLORS.primary
+    tintColor: COLORS.primary,
   },
   tabText: {
     fontSize: 20,
-    fontFamily: "Urbanist SemiBold",
-    color: COLORS.black
-  }
-})
+    fontFamily: 'Urbanist SemiBold',
+    color: COLORS.black,
+  },
+  scrollContent: {
+    padding: 16,
+  },
+  bottomSheetContent: {
+    padding: 20,
+  },
+  bottomSheetTitle: {
+    fontSize: 18,
+    fontFamily: 'Urbanist SemiBold',
+    color: COLORS.black,
+    marginBottom: 12,
+  },
+  bottomSheetSubtitle: {
+    fontSize: 16,
+    fontFamily: 'Urbanist SemiBold',
+    color: COLORS.greyscale900,
+    marginBottom: 20,
+  },
+  bottomSheetButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    width: (SIZES.width - 32) / 2 - 8,
+    backgroundColor: COLORS.tansparentPrimary,
+    borderRadius: 32,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontFamily: 'Urbanist SemiBold',
+    color: COLORS.primary,
+  },
+  removeButton: {
+    width: (SIZES.width - 32) / 2 - 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: 32,
+  },
+  removeButtonText: {
+    fontSize: 16,
+    fontFamily: 'Urbanist SemiBold',
+    color: COLORS.white,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 20,
+    fontFamily: 'Urbanist Bold',
+    color: COLORS.white,
+    marginBottom: 10,
+  },
+  emptySubText: {
+    fontSize: 16,
+    fontFamily: 'Urbanist SemiBold',
+    color: COLORS.grayscale200,
+  },
+});
 
-export default Favourite
+export default Favourite;

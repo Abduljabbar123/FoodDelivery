@@ -1,6 +1,6 @@
-//gradle.startParameter.excludedTaskNames.addAll(
-//        gradle.startParameter.taskNames.findAll { it.contains("testClasses") }
-//)
+gradle.startParameter.excludedTaskNames.addAll(
+        gradle.startParameter.taskNames.findAll { it.contains("testClasses") }
+)
 
 buildscript {
     ext {

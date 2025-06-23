@@ -29,13 +29,21 @@ import {
   GET_ALL_FOOD,
   GET_DISCOUNTED_PRICE,
   GET_FOOD_BY_CATOGERY_ID,
+  setLoading,
 } from '../Redux/Reducers/FoodListing/action';
 import {FModelListing} from '../Redux/Reducers/FoodListing/actions';
 import {GET_ALL_CATOGERIES} from '../Redux/Reducers/Catogery/action';
 import {FCatogerylListing} from '../Redux/Reducers/Catogery/actions';
+import {
+  ADD_PRODUCT_TO_FAVORITES,
+  GET_ALL_FAVORITES,
+  REMOVE_PRODUCT_FROM_FAVORITES,
+} from '../Redux/Reducers/Favorites/action';
 import Categories from './Categories';
 import Loader from '../components/Loader';
 import {products} from '../data/index';
+import {ENV} from '../config/env';
+import {showSnackbar} from '../components/Snackbar';
 
 interface BannerItem {
   id: number;
@@ -66,16 +74,18 @@ const Home = () => {
   const keyExtractor = (item: BannerItem) => item.id.toString();
   const {user} = useAppSelector(state => state.auth);
   const [search, setSearch] = useState('');
-  const [listCatogeries, setListCatogeries] = useState([]);
-  const [recomendedProductList, setRecomendedProductList] = useState([]);
-  const [loader, setLoader] = useState({
-    categories: false,
-    products: false,
-    discountedItems: false,
-  });
+
+  // Get data from Redux store
+  const {
+    categories: listCatogeries,
+    recommendedProducts: recomendedProductList,
+    discountedProducts: discountedPriceItems,
+    productsByCategory: productByCatogeries,
+    loading,
+  } = useAppSelector(state => state.foodListing);
+
+  const {favorites} = useAppSelector(state => state.favorites);
   const [selectedCategories, setSelectedCategories] = useState(['']);
-  const [productByCatogeries, setProductByCatogeries] = useState([]);
-  const [discountedPriceItems, setDiscountedPriceItems] = useState([]);
 
   const handleEndReached = () => {
     setCurrentIndex(prevIndex => (prevIndex + 1) % banners.length);
@@ -109,66 +119,86 @@ const Home = () => {
   useLayoutEffect(() => {
     getAllCategories();
     getAllDiscountedFoods();
+    getAllFavorites();
   }, []);
 
   const getAllCategories = () => {
     try {
-      setLoader({...loader, categories: true, products: true});
+      setLoading({categories: true, products: true, discountedItems: false});
       GET_ALL_FOOD((res: FModelListing) => {
-        setRecomendedProductList(res?.foods);
         console.log('res', JSON.stringify(res?.foods, null, 2));
-        // setSelectedCategories(res?.products);
-        setLoader({...loader, products: false});
+        setLoading({
+          categories: false,
+          products: false,
+          discountedItems: false,
+        });
       });
-    } finally {
-      setLoader({...loader, categories: false});
+    } catch (error) {
+      setLoading({categories: false, products: false, discountedItems: false});
     }
 
     try {
       GET_ALL_CATOGERIES((res: FModelListing) => {
-        setListCatogeries(res?.categories);
-        if (res?.categories.length > 0) {
-          setSelectedCategories(res?.categories[0]._id);
+        if (res?.categories && res?.categories.length > 0) {
+          setSelectedCategories([res?.categories[0]._id]);
           getProductByCatogeryID(res?.categories[0]._id);
         }
-        setLoader({...loader, categories: false});
+        setLoading({
+          categories: false,
+          products: false,
+          discountedItems: false,
+        });
       });
     } catch (error) {
-    } finally {
-      setLoader({...loader, categories: false});
+      setLoading({categories: false, products: false, discountedItems: false});
     }
-
-    return () => {
-      setLoader({...loader, categories: false, products: false});
-    };
   };
 
   const getProductByCatogeryID = (id: string) => {
     try {
+      setLoading({categories: false, products: true, discountedItems: false});
       GET_FOOD_BY_CATOGERY_ID(id, async res => {
-        setProductByCatogeries(res?.foods);
-        setLoader({...loader, categories: false});
+        setLoading({
+          categories: false,
+          products: false,
+          discountedItems: false,
+        });
       });
     } catch (error) {
-    } finally {
-      setLoader({...loader, categories: false});
+      setLoading({categories: false, products: false, discountedItems: false});
     }
   };
 
   const getAllDiscountedFoods = () => {
     try {
-      setLoader({...loader, discountedItems: true});
+      setLoading({categories: false, products: false, discountedItems: true});
 
       GET_DISCOUNTED_PRICE((res: FModelListing) => {
-        setDiscountedPriceItems(res?.food);
         console.log('res', JSON.stringify(res?.foods, null, 2));
-        setLoader({...loader, discountedItems: false});
+        setLoading({
+          categories: false,
+          products: false,
+          discountedItems: false,
+        });
       });
     } catch (error) {
-    } finally {
-      setLoader({...loader, discountedItems: false});
+      setLoading({categories: false, products: false, discountedItems: false});
     }
   };
+
+  const getAllFavorites = () => {
+    GET_ALL_FAVORITES(() => {});
+  };
+
+  const productAddToFavorites = (foodId: string) => {
+    const isFavorite = favorites.some(fav => fav.food._id === foodId);
+    if (isFavorite) {
+      REMOVE_PRODUCT_FROM_FAVORITES(foodId, () => {});
+    } else {
+      ADD_PRODUCT_TO_FAVORITES(foodId, () => {});
+    }
+  };
+
   /**
    * render header
    */
@@ -177,8 +207,10 @@ const Home = () => {
       <View style={styles.headerContainer}>
         <View style={styles.viewLeft}>
           <Image
-            source={images.user1}
-            resizeMode="contain"
+            source={
+              user?.photo ? {uri: ENV.resourceURL + user.photo} : images.user1
+            }
+            resizeMode="cover"
             style={styles.userIcon}
           />
           <View style={styles.viewNameContainer}>
@@ -191,6 +223,13 @@ const Home = () => {
                 },
               ]}>
               {user?.name}
+            </Text>
+            <Text
+              style={[
+                styles.favoritesCount,
+                {color: dark ? COLORS.white : COLORS.greyscale900},
+              ]}>
+              Favorites: {favorites.length}
             </Text>
           </View>
         </View>
@@ -211,7 +250,7 @@ const Home = () => {
               source={icons.heartOutline}
               resizeMode="contain"
               style={[
-                styles.bookmarkIcon,
+                styles.heartIcon,
                 {tintColor: dark ? COLORS.white : COLORS.greyscale900},
               ]}
             />
@@ -304,7 +343,11 @@ const Home = () => {
           onPress={() => navigation.navigate('categories')}
         />
         <FlatList
-          data={listCatogeries?.length > 0 ? listCatogeries.slice(0, 8) : []}
+          data={
+            listCatogeries && listCatogeries.length > 0
+              ? listCatogeries.slice(0, 8)
+              : []
+          }
           keyExtractor={(item, index) => index.toString()}
           horizontal={false}
           numColumns={4} // Render two items per row
@@ -332,40 +375,41 @@ const Home = () => {
     return (
       <View>
         <SubHeaderItem
-          title="Discount guaranteed!👌"
+          title="Discounted Foods🔥"
           navTitle="See all"
           onPress={() => navigation.navigate('discountfoods')}
         />
-        <View
-          style={{
-            backgroundColor: dark ? COLORS.dark1 : COLORS.secondaryWhite,
-            marginVertical: 16,
-          }}>
-          <FlatList
-            data={discountedPriceItems || []}
-            keyExtractor={item => item._id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            renderItem={({item}) => {
-              return (
-                <VerticalFoodCard
-                  name={item?.name}
-                  image={item?.image}
-                  distance={item?.distance}
-                  price={item?.price}
-                  fee={item?.fee}
-                  rating={item?.rating}
-                  numReviews={item?.numReviews}
-                  onPress={() =>
-                    navigation.navigate('fooddetails', {
-                      itemId: item?._id,
-                    })
-                  }
-                />
-              );
-            }}
-          />
-        </View>
+        <FlatList
+          data={discountedPriceItems || []}
+          keyExtractor={(item, index) =>
+            item._id?.toString() || index.toString()
+          }
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          renderItem={({item}) => {
+            return (
+              <VerticalFoodCard
+                name={item?.name || ''}
+                image={item?.image}
+                distance={item?.distance || ''}
+                price={item?.price?.toString() || '0'}
+                fee={item?.fee || ''}
+                rating={item?.rating || 0}
+                numReviews={item?.numReviews?.toString() || '0'}
+                foodId={item?._id || ''}
+                isFavorite={favorites.some(fav => fav.food._id === item._id)}
+                onPress={() =>
+                  navigation.navigate('fooddetails', {
+                    itemId: item?._id,
+                  })
+                }
+                onPressFavorite={() => {
+                  productAddToFavorites(item?._id || '');
+                }}
+              />
+            );
+          }}
+        />
       </View>
     );
   };
@@ -389,7 +433,7 @@ const Home = () => {
         }}
         key={item?._id}
         onPress={() => {
-          setSelectedCategories(item?._id);
+          setSelectedCategories([item?._id]);
           getProductByCatogeryID(item?._id);
         }}>
         <Text
@@ -411,8 +455,12 @@ const Home = () => {
           onPress={() => navigation.navigate('recommendedfoods')}
         />
         <FlatList
-          data={listCatogeries?.length > 0 ? listCatogeries.slice(0, 8) : []}
-          keyExtractor={item => item.id}
+          data={
+            listCatogeries && listCatogeries.length > 0
+              ? listCatogeries.slice(0, 8)
+              : []
+          }
+          keyExtractor={(item, index) => item._id || index.toString()}
           showsHorizontalScrollIndicator={false}
           horizontal
           renderItem={renderCategoryItem}
@@ -424,22 +472,29 @@ const Home = () => {
           }}>
           <FlatList
             data={productByCatogeries || []}
-            keyExtractor={item => item._id?.toString()}
+            keyExtractor={(item, index) =>
+              item._id?.toString() || index.toString()
+            }
             renderItem={({item}: {item: FModelListing}) => {
               return (
                 <HorizontalFoodCard
-                  name={item?.name}
+                  name={item?.name || ''}
                   image={item?.image}
-                  distance={item?.distance}
-                  price={item?.price}
-                  fee={item?.fee}
-                  rating={item?.rating}
-                  numReviews={item?.numReviews}
+                  distance={item?.distance || ''}
+                  price={item?.price?.toString() || '0'}
+                  fee={item?.fee || ''}
+                  rating={item?.rating || 0}
+                  numReviews={item?.numReviews?.toString() || '0'}
+                  foodId={item?._id || ''}
+                  isFavorite={favorites.some(fav => fav.food._id === item._id)}
                   isPromo={item?.isPromo}
                   onPress={() => {
                     navigation.navigate('fooddetails', {
                       itemId: item?._id,
                     });
+                  }}
+                  onPressFavorite={() => {
+                    productAddToFavorites(item?._id || '');
                   }}
                 />
               );
@@ -457,13 +512,13 @@ const Home = () => {
         <ScrollView showsVerticalScrollIndicator={false}>
           {renderSearchBar()}
           {renderBanner()}
-          {loader.categories === false ? (
+          {loading?.categories === false ? (
             renderCategories()
           ) : (
             <Loader {...loaderProps} />
           )}
-          {loader.discountedItems === false && renderDiscountedFoods()}
-          {loader.products === false ? (
+          {loading?.discountedItems === false && renderDiscountedFoods()}
+          {loading?.products === false ? (
             renderRecommendedFoods()
           ) : (
             <Loader {...loaderProps} />
@@ -523,7 +578,7 @@ const styles = StyleSheet.create({
     tintColor: COLORS.black,
     marginRight: 8,
   },
-  bookmarkIcon: {
+  heartIcon: {
     height: 24,
     width: 24,
     tintColor: COLORS.black,
@@ -630,6 +685,12 @@ const styles = StyleSheet.create({
   },
   activeDot: {
     backgroundColor: COLORS.white,
+  },
+  favoritesCount: {
+    fontSize: 12,
+    fontFamily: 'Urbanist Regular',
+    color: COLORS.greyscale900,
+    marginTop: 4,
   },
 });
 

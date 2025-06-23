@@ -21,6 +21,7 @@ import {
   GET_FOOD_BY_CATOGERY_ID,
   GET_FOOD_BY_ID,
 } from '../Redux/Reducers/FoodListing/action';
+import {useAppSelector} from '../Helper/Hooks/reduxHooks';
 
 const FoodDetails = (props: any) => {
   const navigation = useNavigation<NavigationProp<any>>();
@@ -31,6 +32,9 @@ const FoodDetails = (props: any) => {
   const [loader, setLoader] = useState({
     products: false,
   });
+  const {favorites} = useAppSelector(state => state.favorites);
+
+  const isFavorite = favorites.some(fav => fav.food._id === productId);
 
   // Slider images
   const sliderImages = [
@@ -42,7 +46,6 @@ const FoodDetails = (props: any) => {
 
   useEffect(() => {
     getProductByCatogeryID(productId);
-    console.log('productId', productId);
   }, [productId]);
 
   const getProductByCatogeryID = (id: string) => {
@@ -66,7 +69,7 @@ const FoodDetails = (props: any) => {
   };
   // render header
   const renderHeader = () => {
-    const [isFavorite, setIsFavorite] = useState(false);
+    const handleFavoritePress = () => {};
 
     return (
       <View style={styles.headerContainer}>
@@ -79,11 +82,17 @@ const FoodDetails = (props: any) => {
         </TouchableOpacity>
 
         <View style={styles.iconContainer}>
-          <TouchableOpacity onPress={() => setIsFavorite(!isFavorite)}>
+          <TouchableOpacity onPress={handleFavoritePress}>
             <Image
-              source={isFavorite ? icons.heart2 : icons.heart2Outline}
+              source={
+                isFavorite ? icons.heart3 : icons.heart2Outline
+                // icons.heart2Outline
+              }
               resizeMode="contain"
-              style={styles.bookmarkIcon}
+              style={[
+                styles.bookmarkIcon,
+                {tintColor: isFavorite ? COLORS.red : COLORS.grayscale400},
+              ]}
             />
           </TouchableOpacity>
           <TouchableOpacity

@@ -22,7 +22,10 @@ import HorizontalFoodCard from '../components/HorizontalFoodCard';
 import NotFoundCard from '../components/NotFound';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {async} from 'validate.js';
-import {GET_ALL_FOOD} from '../Redux/Reducers/FoodListing/action';
+import {
+  GET_ALL_FOOD,
+  GET_FILTERED_PRODUCTS,
+} from '../Redux/Reducers/FoodListing/action';
 import {FModelListing} from '../Redux/Reducers/FoodListing/actions';
 import {GET_ALL_CATOGERIES} from '../Redux/Reducers/Catogery/action';
 
@@ -56,13 +59,17 @@ const Search = () => {
   const navigation = useNavigation<NavigationProp<any>>();
   const refRBSheet = useRef<any>(null);
   const {dark, colors} = useTheme();
-  const [selectedCategories, setSelectedCategories] = useState(['1']);
+  const [selectedCategories, setSelectedCategories] = useState([
+    '6841c000faf7ece7b8fc2122',
+  ]);
   const [selectedRating, setSelectedRating] = useState(['1']);
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState([0, 100]); // Initial price range
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [listCatogeries, setListCatogeries] = useState([]);
-  const [recomendedProductList, setRecomendedProductList] = useState([]);
+  const [filterProducts, setFilterProducts] = useState([]);
+  const [resultsCount, setResultsCount] = useState(0);
   const [loader, setLoader] = useState({
     categories: false,
     products: false,
@@ -74,20 +81,14 @@ const Search = () => {
 
   const getAllCatogeriesAndProducts = async () => {
     try {
-      setLoader({...loader, categories: true, products: true});
-      GET_ALL_FOOD((res: FModelListing) => {
-        setRecomendedProductList(res?.foods);
-        console.log('res', JSON.stringify(res?.foods, null, 2));
-        // setSelectedCategories(res?.products);
-        setLoader({...loader, products: false});
-      });
-    } finally {
-      setLoader({...loader, categories: false});
-    }
+      setLoader({...loader, categories: true, products: false});
 
-    try {
       GET_ALL_CATOGERIES((res: FModelListing) => {
         setListCatogeries(res?.categories);
+        console.log(
+          'List Catogeries ===>',
+          JSON.stringify(res?.categories, null, 2),
+        );
         setLoader({...loader, categories: false});
       });
     } catch (error) {
@@ -98,6 +99,35 @@ const Search = () => {
     return () => {
       setLoader({...loader, categories: false, products: false});
     };
+  };
+
+  const getFilteredProducts = async () => {
+    console.log('Search Query ===>', searchQuery);
+    console.log('Selected Categories ===>', selectedCategories);
+    console.log('Selected Rating ===>', selectedRating);
+    console.log('Price Range ===>', priceRange);
+
+    try {
+      setLoader({...loader, categories: false, products: true});
+      GET_FILTERED_PRODUCTS(
+        priceRange[1],
+        searchQuery,
+        selectedCategories,
+        selectedRating,
+        (res: FModelListing) => {
+          setFilterProducts(res?.foods);
+          setResultsCount(res?.count);
+          console.log(
+            'Filtered Products ===',
+            JSON.stringify(res?.foods, null, 2),
+          );
+
+          // setSelectedCategories(res?.products);
+        },
+      );
+    } finally {
+      setLoader({...loader, products: false});
+    }
   };
 
   const handleSliderChange = (values: number[]) => {
@@ -153,21 +183,20 @@ const Search = () => {
    */
   const renderContent = () => {
     const [selectedTab, setSelectedTab] = useState('row');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filteredFoods, setFilteredFoods] = useState(products);
-    const [resultsCount, setResultsCount] = useState(0);
+    // const [filteredFoods, setFilteredFoods] = useState(products);
 
     useEffect(() => {
-      handleSearch();
+      // handleSearch();
+      getFilteredProducts();
     }, [searchQuery, selectedTab]);
 
-    const handleSearch = () => {
-      const allFoods = products.filter(food =>
-        food.name.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-      setFilteredFoods(allFoods);
-      setResultsCount(allFoods.length);
-    };
+    // const handleSearch = () => {
+    //   const allFoods = products.filter(food =>
+    //     food.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    //   );
+    //   setFilteredFoods(allFoods);
+    //   setResultsCount(allFoods.length);
+    // };
 
     return (
       <View>
@@ -179,7 +208,7 @@ const Search = () => {
               backgroundColor: dark ? COLORS.dark2 : COLORS.secondaryWhite,
             },
           ]}>
-          <TouchableOpacity onPress={handleSearch}>
+          <TouchableOpacity onPress={() => navigation.navigate('search')}>
             <Image
               source={icons.search2}
               resizeMode="contain"
@@ -264,40 +293,48 @@ const Search = () => {
                 <>
                   {selectedTab === 'row' ? (
                     <FlatList
-                      data={filteredFoods}
-                      keyExtractor={item => item.id}
+                      data={filterProducts}
+                      keyExtractor={item => item._id}
                       numColumns={2}
                       columnWrapperStyle={{gap: 16}}
                       renderItem={({item}) => {
                         return (
                           <VerticalFoodCard
-                            name={item.name}
-                            image={item.image}
-                            distance={item.distance}
-                            price={item.price}
-                            fee={item.fee}
-                            rating={item.rating}
-                            numReviews={item.numReviews}
-                            onPress={() => navigation.navigate('fooddetails')}
+                            name={item?.name}
+                            image={item?.image}
+                            distance={item?.distance}
+                            price={item?.price}
+                            fee={item?.fee}
+                            rating={item?.rating}
+                            numReviews={item?.numReviews}
+                            onPress={() => {
+                              navigation.navigate('fooddetails', {
+                                itemId: item?._id,
+                              });
+                            }}
                           />
                         );
                       }}
                     />
                   ) : (
                     <FlatList
-                      data={filteredFoods}
+                      data={filterProducts}
                       keyExtractor={item => item.id}
                       renderItem={({item}) => {
                         return (
                           <HorizontalFoodCard
-                            name={item.name}
-                            image={item.image}
-                            distance={item.distance}
-                            price={item.price}
-                            fee={item.fee}
-                            rating={item.rating}
-                            numReviews={item.numReviews}
-                            onPress={() => navigation.navigate('fooddetails')}
+                            name={item?.name}
+                            image={item?.image}
+                            distance={item?.distance}
+                            price={item?.price}
+                            fee={item?.fee}
+                            rating={item?.rating}
+                            numReviews={item?.numReviews}
+                            onPress={() => {
+                              navigation.navigate('fooddetails', {
+                                itemId: item?._id,
+                              });
+                            }}
                           />
                         );
                       }}
@@ -313,20 +350,6 @@ const Search = () => {
       </View>
     );
   };
-
-  // Toggle category selection
-  // const toggleCategory = (categoryId: string) => {
-  //   const updatedCategories = [...selectedCategories];
-  //   const index = updatedCategories.indexOf(categoryId);
-
-  //   if (index === -1) {
-  //     updatedCategories.push(categoryId);
-  //   } else {
-  //     updatedCategories.splice(index, 1);
-  //   }
-
-  //   setSelectedCategories(updatedCategories);
-  // };
 
   // toggle rating selection
   const toggleRating = (ratingId: string) => {
@@ -368,7 +391,7 @@ const Search = () => {
         borderRadius: 24,
         marginRight: 12,
       }}
-      onPress={() => toggleCategory(item._id)}>
+      onPress={() => setSelectedCategories(item._id)}>
       <Text
         style={{
           color: selectedCategories.includes(item._id)
@@ -482,7 +505,7 @@ const Search = () => {
               sliderLength={SIZES.width - 32}
               onValuesChange={handleSliderChange}
               min={0}
-              max={100}
+              max={1000}
               step={1}
               allowOverlap={false}
               snapped
@@ -530,7 +553,10 @@ const Search = () => {
               title="Filter"
               filled
               style={styles.logoutButton}
-              onPress={() => refRBSheet.current.close()}
+              onPress={() => {
+                getFilteredProducts();
+                refRBSheet.current.close();
+              }}
             />
           </View>
         </RBSheet>

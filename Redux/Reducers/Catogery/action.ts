@@ -5,6 +5,7 @@ import Api from '../../../Service/Api';
 import {ICommonResponse, TCallback} from '../types';
 import {showSnackbar} from '../../../components/Snackbar';
 import {getError} from '../../../config/function';
+import {setCategories} from '../FoodListing/action';
 
 export const CREATE_LISTING = 'CREATE_LISTING';
 export const TYPE_LISTING = 'TYPE_LISTING';
@@ -40,11 +41,7 @@ export const LISTING_STATUS_CHANGE = (
       callback(res);
     })
     .catch(error => {
-      // crashlytics().log(
-      //   'LISTING_STATUS_CHANGE: CAR LISTING STATUS CHANGE BY OWNER.',
-      // );
-      // crashlytics().recordError(error);
-      console.log(error);
+      console.log('❌ [LISTING_STATUS_CHANGE] API Error:', error);
       showSnackbar({
         type: 'error',
         body: getError(error),
@@ -65,9 +62,14 @@ export const GET_ALL_CATOGERIES = (
       callback(res);
       const {dispatch} = getRedux();
       dispatch({type: CREATE_LISTING, payload: res});
+
+      // Also dispatch to FoodListing reducer for home screen persistence
+      if (res?.categories) {
+        setCategories(res.categories);
+      }
     })
     .catch(error => {
-      console.log('📢 [actions.ts:140]', error);
+      console.log('❌ [GET_ALL_CATOGERIES] API Error:', error);
 
       showSnackbar({
         type: 'error',
@@ -91,7 +93,7 @@ export const GET_CATOGERIES_BY_ID = (
       console.log('res', JSON.stringify(res, null, 2));
     })
     .catch(error => {
-      console.log('📢 [actions.ts:140]', error);
+      console.log('❌ [GET_CATOGERIES_BY_ID] API Error:', error);
 
       showSnackbar({
         type: 'error',

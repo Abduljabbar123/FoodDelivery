@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,10 @@ interface VerticalFoodCardProps {
   fee: string;
   rating: number;
   numReviews: string;
+  isFavorite?: boolean;
+  foodId: string;
   onPress: () => void;
+  onPressFavorite: () => void;
 }
 
 const VerticalFoodCard: React.FC<VerticalFoodCardProps> = ({
@@ -31,9 +34,11 @@ const VerticalFoodCard: React.FC<VerticalFoodCardProps> = ({
   fee,
   rating,
   numReviews,
+  isFavorite,
+  foodId,
   onPress,
+  onPressFavorite,
 }) => {
-  const [isFavourite, setIsFavourite] = useState(false);
   const {dark} = useTheme();
 
   return (
@@ -87,11 +92,14 @@ const VerticalFoodCard: React.FC<VerticalFoodCardProps> = ({
           />
           <Text style={styles.location}>{fee ? fee : 0}</Text>
         </View>
-        <TouchableOpacity onPress={() => setIsFavourite(!isFavourite)}>
+        <TouchableOpacity onPress={onPressFavorite}>
           <Image
-            source={isFavourite ? icons.heart2 : icons.heart2Outline}
+            source={isFavorite ? icons.heart2 : icons.heart2Outline}
             resizeMode="contain"
-            style={styles.heartIcon}
+            style={[
+              styles.heartIcon,
+              {tintColor: isFavorite ? COLORS.red : COLORS.grayscale400},
+            ]}
           />
         </TouchableOpacity>
       </View>
@@ -143,12 +151,6 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     marginRight: 8,
   },
-  heartIcon: {
-    width: 16,
-    height: 16,
-    tintColor: COLORS.red,
-    marginLeft: 6,
-  },
   reviewContainer: {
     position: 'absolute',
     top: 16,
@@ -177,6 +179,11 @@ const styles = StyleSheet.create({
     width: 18,
     tintColor: COLORS.primary,
     marginRight: 4,
+  },
+  heartIcon: {
+    height: 24,
+    width: 24,
+    tintColor: COLORS.primary,
   },
 });
 

@@ -3,6 +3,9 @@ import auth from './Reducers/Auth/reducers';
 import payment from './Reducers/Payment/reducers';
 import carReducersObject from './Reducers/Cars/reducers';
 import FoodListingReducer from './Reducers/FoodListing/reducer';
+import favoritesReducer from './Reducers/Favorites/reducer';
+import addressReducer from './Reducers/Address/reducers';
+
 const {carReducers, paymentReducer} = carReducersObject;
 
 const reducers = combineReducers({
@@ -11,5 +14,7 @@ const reducers = combineReducers({
   car: carReducers,
   foodListing: FoodListingReducer,
   pendingPayment: paymentReducer,
+  favorites: favoritesReducer,
+  address: addressReducer,
 });
 export default reducers;

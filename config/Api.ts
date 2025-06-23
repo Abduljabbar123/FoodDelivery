@@ -18,12 +18,17 @@ export default {
     url: 'food/getDiscountedPriceItem',
   },
   GET_PRODUCT_BY_CATOGERY_ID: {method: 'GET', url: 'food/getFoodByCategory/'},
+  GET_FILTERED_PRODUCT: {method: 'GET', url: 'food/foods/filter?'},
 
   GET_CATOGERY_BY_ID: {method: 'GET', url: 'category/'},
   GET_ALL_CATOGERIES: {method: 'GET', url: 'category'},
 
   GET_ALL_CART_PRODUCT: {method: 'GET', url: 'cart'},
   ADD_TO_CART: {method: 'POST', url: 'cart/add'},
+
+  REMOVE_FROM_CART: {method: 'DELETE', url: 'cart/remove/'},
+  CLEAR_CART: {method: 'DELETE', url: 'cart/clear'},
+  UPDATE_CART: {method: 'PUT', url: 'cart/update'},
 
   GET_USER_BY_ID: {
     method: 'GET',
@@ -220,5 +225,53 @@ export default {
   CHECK_RENTAL_EXCHANGE: {
     method: 'PATCH',
     url: 'car-rentals/checkRentalExchangeForCarRenter/',
+  },
+
+  // Favorites APIs
+  ADD_TO_FAVORITES: {
+    method: 'POST',
+    url: 'favorites/add',
+  },
+  REMOVE_FROM_FAVORITES: {
+    method: 'DELETE',
+    url: 'favorites/remove/',
+  },
+  GET_ALL_FAVORITES: {
+    method: 'GET',
+    url: 'favorites',
+  },
+  CHECK_FAVORITE_STATUS: {
+    method: 'GET',
+    url: 'favorites/check/',
+  },
+
+  // Address APIs
+  ADDRESSES: {
+    method: 'POST',
+    url: 'addresses',
+  },
+  GET_ADDRESSES: {
+    method: 'GET',
+    url: 'addresses',
+  },
+  GET_ADDRESS_BY_ID: {
+    method: 'GET',
+    url: 'addresses/',
+  },
+  UPDATE_ADDRESS: {
+    method: 'PUT',
+    url: 'addresses/',
+  },
+  DELETE_ADDRESS: {
+    method: 'DELETE',
+    url: 'addresses/',
+  },
+  SET_DEFAULT_ADDRESS: {
+    method: 'PATCH',
+    url: 'addresses/',
+  },
+  GET_DEFAULT_ADDRESS: {
+    method: 'GET',
+    url: 'addresses/default',
   },
 };

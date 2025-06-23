@@ -18,9 +18,7 @@ export const ADD_CARD = (data: any, callback: TCallback<ICommonResponse>) => {
       callback(res);
     })
     .catch(error => {
-      // crashlytics().log('ADD_CARD: ADDING STRIPE CARD.');
-      // crashlytics().recordError(error);
-      console.log('📢 [actions.ts:011]', error);
+      console.log('❌ [ADD_CARD] API Error:', error);
       showSnackbar({
         type: 'error',
         body: getError(error),
@@ -47,9 +45,7 @@ export const ADD_CARD_FOR_EXTEND = (
       callback(res);
     })
     .catch(error => {
-      // crashlytics().log('ADD_CARD: ADDING STRIPE CARD.');
-      // crashlytics().recordError(error);
-      console.log('📢 [actions.ts:011]', error);
+      console.log('❌ [ADD_CARD_FOR_EXTEND] API Error:', error);
       showSnackbar({
         type: 'error',
         body: getError(error),
@@ -76,11 +72,7 @@ export const GET_ALL_SAVED_CARD = (
       callback(res);
     })
     .catch(error => {
-      // crashlytics().log(
-      //   'GET_ALL_SAVED_CARD: RENTER GETTING ALL SAVED CARDS(PAYMENT).',
-      // );
-      // crashlytics().recordError(error);
-      console.log('📢 [actions.ts:012]', error);
+      console.log('❌ [GET_ALL_SAVED_CARD] API Error:', error);
       showSnackbar({
         type: 'error',
         body: getError(error),
@@ -108,11 +100,7 @@ export const ADD_OWNER_BANK_ACCOUNT = (
       callback(res);
     })
     .catch(error => {
-      // crashlytics().log(
-      //   'ADD_OWNER_BANK_ACCOUNT: CAR OWNER ADDING HIS BANK ACCOUNT.',
-      // );
-      // crashlytics().recordError(error);
-      console.log('📢 [actions.ts:017]', error);
+      console.log('❌ [ADD_OWNER_BANK_ACCOUNT] API Error:', error);
       showSnackbar({
         type: 'error',
         body: getError(error),
@@ -135,11 +123,7 @@ export const OWNER_BANK_ACCOUNTS = (callback: TCallback<ICommonResponse>) => {
       callback(res);
     })
     .catch(error => {
-      // crashlytics().log(
-      //   'OWNER_BANK_ACCOUNTS: CAR OWNER GETTING ADDED BANK ACCOUNTS.',
-      // );
-      // crashlytics().recordError(error);
-      console.log('📢 [actions.ts:017]', error);
+      console.log('❌ [OWNER_BANK_ACCOUNTS] API Error:', error);
       showSnackbar({
         type: 'error',
         body: getError(error),
@@ -165,11 +149,7 @@ export const DELETE_CONNECTED_ACCOUNT = (
       callback(res);
     })
     .catch(error => {
-      // crashlytics().log(
-      //   'DELETE_CONNECTED_ACCOUNT: CAR OWNER DELETING STRIPE CONNECT ACCOUNT.',
-      // );
-      // crashlytics().recordError(error);
-      console.log('📢 [actions.ts:018]', error);
+      console.log('❌ [DELETE_CONNECTED_ACCOUNT] API Error:', error);
       showSnackbar({
         type: 'error',
         body: getError(error),
@@ -195,11 +175,7 @@ export const CONNECT_ONE_ACCOUNT = (
       callback(res);
     })
     .catch(error => {
-      // crashlytics().log(
-      //   'CONNECT_ONE_ACCOUNT: CAR OWNER CHANGE STRIPE CONNECT ACCOUNT IN HIS PROFILE.',
-      // );
-      // crashlytics().recordError(error);
-      console.log('📢 [actions.ts:018]', error);
+      console.log('❌ [CONNECT_ONE_ACCOUNT] API Error:', error);
       showSnackbar({
         type: 'error',
         body: getError(error),
@@ -225,11 +201,7 @@ export const GET_PENDING_PAYMENTS = (
       callback(res);
     })
     .catch(error => {
-      // crashlytics().log(
-      //   'GET_PENDING_PAYMENTS: RENTER GETTING HIS PENDING PAYMENT.',
-      // );
-      // crashlytics().recordError(error);
-      console.log('📢 [actions.ts:019]', error);
+      console.log('❌ [GET_PENDING_PAYMENTS] API Error:', error);
       showSnackbar({
         type: 'error',
         body: getError(error),
@@ -258,9 +230,7 @@ export const NEW_RENTAL_PAYMENT = (
       callback(res);
     })
     .catch(error => {
-      console.log('📢 [actions.ts:0120]', error);
-      // crashlytics().log('NEW_RENTAL_PAYMENT: WHEN RENTAL DOING PAYMENT ON NEW RENTAL ADDED BY ADMIN.');
-      // crashlytics().recordError(error);
+      console.log('❌ [NEW_RENTAL_PAYMENT] API Error:', error);
       showSnackbar({
         type: 'error',
         body: getError(error),

@@ -114,12 +114,12 @@ class Api {
         .catch((err: any) => {
           console.log('ERROR API formRequest->', err);
 
-          if (err.request.status === 418) {
+          if (err.request.status === 403) {
             LOGOUT();
             //@ts-ignore
-            navigationRef.navigate('PolicyViolation', {
-              data: err.response?.data?.user?.deactivate,
-            });
+            // navigationRef.navigate('PolicyViolation', {
+            //   data: err.response?.data?.user?.deactivate,
+            // });
           }
           throw err;
         });

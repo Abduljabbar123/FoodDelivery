@@ -3,12 +3,12 @@ export const ENV = {
   // base_url: 'https://api-food.falconweb.app/api/',
   // resourceURL: 'https://api-food.falconweb.app/',
 
-  // resourceURL: 'https://baddour-api-dev.falconweb.app/',
-  // webUrl: 'https://baddour-admin-dev.falconweb.app/',
-
   // local
   base_url: 'http://localhost:5000/api/',
   resourceURL: 'http://localhost:5000/',
+
+  // resourceURL: 'https://baddour-api-dev.falconweb.app/',
+  // webUrl: 'https://baddour-admin-dev.falconweb.app/',
 
   // base_url: 'http://localhost:5000/api/v1/',
   // base_url: 'http://192.168.18.17:5000/api/v1/',

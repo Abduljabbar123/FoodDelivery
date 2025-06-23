@@ -32,7 +32,9 @@ import RNPickerSelect from 'react-native-picker-select';
 import {useTheme} from '../theme/ThemeProvider';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {useAppSelector} from '../Helper/Hooks/reduxHooks';
-import {UPDATE_USERPROFILE} from '../Redux/Reducers/Auth/actions';
+import {GET_USER, UPDATE_USERPROFILE} from '../Redux/Reducers/Auth/actions';
+import {ENV} from '../config/env copy';
+import Loader from '../components/Loader';
 
 interface Item {
   flag: string;
@@ -44,13 +46,13 @@ interface RenderItemProps {
   item: Item;
 }
 
-const isTestMode = true;
+const isTestMode = false;
 
 const initialState = {
   inputValues: {
-    fullName: isTestMode ? 'John Doe' : '',
-    email: isTestMode ? 'example@gmail.com' : '',
-    nickname: isTestMode ? '' : '',
+    fullName: '',
+    email: '',
+    nickname: '',
     phoneNumber: '',
   },
   inputValidities: {
@@ -74,7 +76,21 @@ const EditProfile = () => {
   const [openStartDatePicker, setOpenStartDatePicker] = useState(false);
   const [selectedGender, setSelectedGender] = useState('');
   const {dark} = useTheme();
-  const {user} = useAppSelector(state => state.auth);
+  const {user, userLoading} = useAppSelector(state => state.auth);
+
+  useEffect(() => {
+    if (user) {
+      console.log(
+        'ENV.resourceURL + user?.photo',
+        ENV.resourceURL + user?.photo,
+      );
+      setImage({
+        uri: ENV.resourceURL + user?.photo || images.user1,
+        name: user?.photo ? user?.photo.split('/').pop() : 'profile.jpg',
+        type: 'image/jpeg',
+      });
+    }
+  }, [user]);
 
   const genderOptions = [
     {label: 'Male', value: 'male'},
@@ -98,14 +114,15 @@ const EditProfile = () => {
   };
 
   useEffect(() => {
-    // add proper data
-    inputChangedHandler('fullName', user?.name || '');
-    inputChangedHandler('email', user?.email || '');
-    inputChangedHandler('nickname', user?.nickname || '');
-    inputChangedHandler('phoneNumber', user?.number || '');
+    // Initialize form with user data from Redux
+    if (user) {
+      inputChangedHandler('fullName', user?.name || '');
+      inputChangedHandler('email', user?.email || '');
+      inputChangedHandler('nickname', user?.nickname || '');
+      inputChangedHandler('phoneNumber', user?.number || user?.phone_no || '');
 
-    console.log('user?.email', user?.email);
-    // inputChangedHandler('phoneNumber', user?.phone_no || '');
+      console.log('user?.email', user?.email);
+    }
   }, [user]);
 
   const inputChangedHandler = useCallback(
@@ -142,7 +159,11 @@ const EditProfile = () => {
         console.log('Image picker error: ', response.errorMessage);
       } else if (response.assets && response.assets.length > 0) {
         let imageUri = response.assets[0].uri;
-        setImage({uri: imageUri});
+        setImage({
+          uri: imageUri,
+          name: response.assets[0].fileName,
+          type: response.assets[0].type,
+        });
       }
     });
   };
@@ -228,23 +249,70 @@ const EditProfile = () => {
   }
 
   const editProfile = () => {
+    if (!user?._id) {
+      Alert.alert('Error', 'User ID not found');
+      return;
+    }
+
     const formData = new FormData();
+    console.log('image uri', image);
     console.log('formState', formState.inputValues.fullName);
 
     formData.append('name', formState.inputValues.fullName || '');
     formData.append('nickname', formState.inputValues.nickname || '');
     formData.append('email', formState.inputValues.email || '');
     formData.append('number', formState.inputValues.phoneNumber || '');
-    formData.append('photo', image?.uri || '');
+    formData.append('image', {
+      uri: image?.uri,
+      name: image?.name || 'profile.jpg',
+      type: image?.type || 'image/jpeg',
+    });
     formData.append('country_code', selectedArea?.callingCode || '');
 
-    UPDATE_USERPROFILE(user?._id, formData, res => {
+    console.log('form Data', formData);
+
+    UPDATE_USERPROFILE(user._id, formData, res => {
       if (res.success) {
-        navigation.goBack();
+        getCurrentUser();
       } else {
+        Alert.alert('Error', res?.message || 'Failed to update profile');
       }
     });
   };
+
+  const getCurrentUser = () => {
+    if (!user?._id) {
+      Alert.alert('Error', 'User ID not found');
+      return;
+    }
+
+    GET_USER(user._id, res => {
+      if (res.success) {
+        navigation.goBack();
+      } else {
+        Alert.alert('Error', 'Failed to fetch updated user data');
+      }
+    });
+  };
+
+  if (userLoading) {
+    return (
+      <SafeAreaView
+        style={[
+          styles.area,
+          {backgroundColor: dark ? COLORS.dark1 : COLORS.white},
+        ]}>
+        <View
+          style={[
+            styles.container,
+            {backgroundColor: dark ? COLORS.dark1 : COLORS.white},
+          ]}>
+          <Header title="Personal Profile" />
+          <Loader size={50} mainStyles={{marginTop: 50}} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView
@@ -290,6 +358,7 @@ const EditProfile = () => {
               errorText={formState.inputValidities['nickname']}
               placeholder="Nickname"
               placeholderTextColor={dark ? COLORS.grayTie : COLORS.black}
+              value={formState.inputValues['nickname']}
             />
             <Input
               id="email"
@@ -367,45 +436,6 @@ const EditProfile = () => {
                 onChangeText={text => inputChangedHandler('phoneNumber', text)}
               />
             </View>
-            {/* <View>
-              <RNPickerSelect
-                placeholder={{label: 'Select', value: ''}}
-                items={genderOptions}
-                onValueChange={value => handleGenderChange(value)}
-                value={selectedGender}
-                style={{
-                  inputIOS: {
-                    fontSize: 16,
-                    paddingHorizontal: 10,
-                    borderRadius: 4,
-                    color: COLORS.greyscale600,
-                    paddingRight: 30,
-                    height: 52,
-                    width: SIZES.width - 32,
-                    alignItems: 'center',
-                    backgroundColor: dark ? COLORS.dark2 : COLORS.greyscale500,
-                  },
-                  inputAndroid: {
-                    fontSize: 16,
-                    paddingHorizontal: 10,
-                    borderRadius: 8,
-                    color: COLORS.greyscale600,
-                    paddingRight: 30,
-                    height: 52,
-                    width: SIZES.width - 32,
-                    alignItems: 'center',
-                    backgroundColor: dark ? COLORS.dark2 : COLORS.greyscale500,
-                  },
-                }}
-              />
-            </View> */}
-            {/* <Input
-              id="occupation"
-              onInputChanged={inputChangedHandler}
-              errorText={formState.inputValidities['occupation']}
-              placeholder="Occupation"
-              placeholderTextColor={dark ? COLORS.grayTie : COLORS.black}
-            /> */}
           </View>
         </ScrollView>
       </View>

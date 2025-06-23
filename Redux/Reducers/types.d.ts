@@ -44,6 +44,7 @@ export type TAuth = {
   updateLocation: TUserLocation;
   onlineUsers: any;
   fcm_token: string | null;
+  userLoading?: boolean;
 };
 
 interface TUser extends TMongoCommon {
@@ -59,6 +60,9 @@ interface TUser extends TMongoCommon {
   address: Address[];
   status?: string;
   dob: string;
+  nickname?: string;
+  number?: string;
+  country_code?: string;
   user_data: {
     account_details?: Array;
     description: string;
@@ -89,8 +93,8 @@ interface Location {
 export type TCallback<T> = (args: T) => void;
 
 export interface ICommonResponse {
-  transaction: any;
-  carRental: any;
+  transaction?: any;
+  carRental?: any;
   carPrice?: any;
   exchangeDays?: any;
   exchangedCarPrice?: any;
